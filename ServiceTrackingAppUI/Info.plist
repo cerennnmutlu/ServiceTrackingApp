@@ -10,5 +10,14 @@
 		<string>Poppins-Regular.ttf</string>
 		<string>Poppins-SemiBold.ttf</string>
 	</array>
+    
+    <key>API_BASE_URL</key>
+      <string>http://127.0.0.1:5059</string>
+
+      <key>NSAppTransportSecurity</key>
+      <dict>
+        <key>NSAllowsArbitraryLoads</key>
+        <true/>
+      </dict>
 </dict>
 </plist>
