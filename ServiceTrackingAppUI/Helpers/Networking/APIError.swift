@@ -11,8 +11,8 @@ enum APIError: Error, LocalizedError {
     case invalidURL
     case unauthorized
     case notFound
-    case server(status: Int, body: String?)
-    case decoding(Error)
+    case server(status: Int, body: String?) 
+    case decoding(Error) //JSON parse edilememiş.
     case network(Error)
     case unknown
 

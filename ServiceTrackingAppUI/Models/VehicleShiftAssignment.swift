@@ -11,7 +11,7 @@ struct VehicleShiftAssignment: Decodable, Identifiable {
     let id: Int
     let serviceVehicleID: Int
     let shiftID: Int
-    /// Backend "date" alanı sadece "YYYY-MM-DD" olabilir; string olarak saklıyoruz.
+    /// Backend date  alanı sadece "YYYY-MM-DD" ; string olarak saklıyoruz.
     let assignmentDate: String
     let createdAt: Date?
 

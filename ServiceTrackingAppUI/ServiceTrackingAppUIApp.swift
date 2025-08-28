@@ -10,16 +10,10 @@ import SwiftUI
 @main
 struct ServiceTrackingAppUIApp: App {
     @StateObject private var appState = AppState()
-
     var body: some Scene {
         WindowGroup {
-            // ContentView kullanıyorsan:
-            ContentView()
+            SplashView()
                 .environmentObject(appState)
-
-            // veya SplashView kullanıyorsan:
-            // SplashView()
-            //     .environmentObject(appState)
         }
     }
 }

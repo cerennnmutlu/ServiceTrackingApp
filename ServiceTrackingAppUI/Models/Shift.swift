@@ -10,7 +10,7 @@ import Foundation
 struct Shift: Decodable, Identifiable {
     let id: Int
     let shiftName: String
-    /// Backend `TimeSpan` → genellikle "HH:mm:ss" string gelir; string tutuyoruz.
+    /// Backend `TimeSpan` →  "HH:mm:ss" stringi olarak tutuluyor.
     let startTime: String
     let endTime: String
     let status: String?

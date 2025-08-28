@@ -6,6 +6,8 @@
 //
 
 import Foundation
+
+//Değişiklikleri izlemek ve tepki vermek için (reactive programming framework'ü)
 import Combine
 
 final class AppState: ObservableObject {

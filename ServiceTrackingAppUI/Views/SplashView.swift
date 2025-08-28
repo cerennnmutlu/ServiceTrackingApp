@@ -17,7 +17,7 @@ struct SplashView: View {
         Group {
             if isActive {
                 if appState.isAuthenticated {
-                    MainView()
+                    ContentView()
                 } else {
                     LoginView()
                 }

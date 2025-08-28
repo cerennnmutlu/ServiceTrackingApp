@@ -20,10 +20,8 @@ struct LoginView: View {
     enum Field { case email, password }
 
     var body: some View {
-        NavigationStack {
-            if appState.isAuthenticated {
-                MainView()
-            } else {
+            NavigationStack {
+            
                 ScrollView {
                     VStack(spacing: 24) {
                         headerView
@@ -40,7 +38,7 @@ struct LoginView: View {
                 .background(Color.white.ignoresSafeArea())
                 .ignoresSafeArea(.keyboard, edges: .bottom)
             }
-        }
+        
         .alert(isPresented: Binding(get: { errorMessage != nil },
                                     set: { _ in errorMessage = nil })) {
             Alert(title: Text("Login Error"),

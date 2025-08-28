@@ -12,6 +12,7 @@ struct LoginRequest: Encodable {
     let password: String
 }
 
+//dışarıdan gelen json nesnesi çözülebilir
 struct UserInfo: Decodable {
     let userID: Int
     let fullName: String
@@ -19,6 +20,7 @@ struct UserInfo: Decodable {
     let email: String
     let roleName: String
 
+    //çözücü
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: AnyCodingKey.self)
         userID   = try c.decodeFlexible(Int.self,    keys: ["userID","UserID","id","Id"])

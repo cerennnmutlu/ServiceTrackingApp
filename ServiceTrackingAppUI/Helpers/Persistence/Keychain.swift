@@ -7,20 +7,21 @@
 
 
 import Foundation
-import Security
+import Security //Keychain Services C API’si
 
 enum Keychain {
     static func save(service: String, value: String) {
         let data = Data(value.utf8)
-        delete(service: service)
+        delete(service: service)// aynı service için "önce sil" stratejisi
         let q: [String: Any] = [
-            kSecClass as String: kSecClassGenericPassword,
-            kSecAttrService as String: service,
-            kSecValueData as String: data
+            kSecClass as String: kSecClassGenericPassword, // "şifre benzeri gizli veri" sınıfı
+            kSecAttrService as String: service,            // eşsiz anahtar gibi davranıyor
+            kSecValueData as String: data                  // saklanacak veri (şifre/token)
         ]
         SecItemAdd(q as CFDictionary, nil)
     }
 
+    //service ile eşleşen ilk girdinin Data’sını döndürür,
     static func read(service: String) -> String? {
         let q: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,

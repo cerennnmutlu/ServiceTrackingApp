@@ -5,6 +5,8 @@
 //  Created by Ceren Mutlu on 27.08.2025.
 //
 
+// MARK: - Identifiable : implement eden her modelin benzersiz bir id özelliği olmalı
+
 import Foundation
 
 struct Driver: Decodable, Identifiable {
