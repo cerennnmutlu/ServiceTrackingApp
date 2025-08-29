@@ -37,14 +37,23 @@ final class APIClient {
         if let token = tokenStore.token {
             req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         }
-        // Extra header’lar
+        // Extra header'lar
         ep.headers.forEach { req.setValue($1, forHTTPHeaderField: $0) }
         
-        
+        // Debug bilgisi
+        print("🌐 API Request: \(req.httpMethod ?? "UNKNOWN") \(url)")
+        if let body = ep.body, let bodyString = String(data: body, encoding: .utf8) {
+            print("📤 Request Body: \(bodyString)")
+        }
 
         do {
             let (data, resp) = try await urlSession.data(for: req)
             guard let http = resp as? HTTPURLResponse else { throw APIError.unknown }
+
+            print("📥 Response Status: \(http.statusCode)")
+            if let responseString = String(data: data, encoding: .utf8) {
+                print("📥 Response Body: \(responseString)")
+            }
 
             switch http.statusCode {
             case 200...299:
@@ -54,6 +63,7 @@ final class APIClient {
                 do {
                     return try decoder.decode(T.self, from: data)
                 } catch {
+                    print("❌ Decoding failed: \(error)")
                     throw APIError.decoding(error)
                 }
             case 401: throw APIError.unauthorized

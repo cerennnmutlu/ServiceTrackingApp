@@ -75,11 +75,11 @@ struct LoginView: View {
             
             // Email / Username
             VStack(alignment: .leading, spacing: 6) {
-                Text("Email or Username")
+                Text("Username or Email")
                     .font(.custom("Poppins-Medium", size: 14))
                     .foregroundColor(.gray)
 
-                TextField("Enter your email or username", text: $email)
+                TextField("Enter your username or email", text: $email)
                     .keyboardType(.emailAddress)
                     .textInputAutocapitalization(.never)
                     .autocorrectionDisabled()
@@ -164,6 +164,13 @@ struct LoginView: View {
         let u = email.trimmingCharacters(in: .whitespacesAndNewlines)
         isLoading = true
         errorMessage = nil
+
+        // Full name ile girişe izin verme: boşluk içeriyorsa reddet
+        if u.contains(where: { $0.isWhitespace }) {
+            isLoading = false
+            errorMessage = "Please enter your username or email (full name is not allowed)."
+            return
+        }
 
         Task {
             do {

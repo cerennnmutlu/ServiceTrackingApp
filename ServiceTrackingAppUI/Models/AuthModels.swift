@@ -18,7 +18,7 @@ struct UserInfo: Decodable {
     let fullName: String
     let username: String
     let email: String
-    let roleName: String
+    let roleID: Int?
 
     //çözücü
     init(from decoder: Decoder) throws {
@@ -27,7 +27,7 @@ struct UserInfo: Decodable {
         fullName = try c.decodeFlexible(String.self, keys: ["fullName","FullName","name","Name"])
         username = try c.decodeFlexible(String.self, keys: ["username","Username"])
         email    = try c.decodeFlexible(String.self, keys: ["email","Email"])
-        roleName = (try? c.decodeFlexible(String.self, keys: ["roleName","RoleName","role","Role"])) ?? ""
+        roleID = try? c.decodeFlexible(Int.self, keys: ["roleID","RoleID"])
     }
 }
 
@@ -42,4 +42,24 @@ struct LoginResponse: Decodable {
         user      = try c.decodeFlexible(UserInfo.self, keys: ["user","User"])
         expiresAt = c.decodeFlexibleIfPresent(Date.self, keys: ["expiresAt","ExpiresAt","expiresAtUtc"])
     }
+}
+
+
+// MARK: - Register DTOs
+struct RegisterRequest: Encodable {
+    let fullName: String
+    let username: String
+    let email: String
+    let password: String
+    let roleID: Int
+
+    enum CodingKeys: String, CodingKey {
+        case fullName, username, email, password
+        case roleID = "RoleID"  // Backend expects "RoleID" not "roleID"
+    }
+}
+
+struct RegisterResponse: Decodable {
+    let message: String?
+    let user: UserInfo?
 }
