@@ -8,38 +8,133 @@
 import SwiftUI
 
 struct ShiftsListView: View {
-    @StateObject private var vm = ShiftsViewModel(service: ShiftService())
-
+    @StateObject private var shiftsVM = ShiftsViewModel(service: ShiftService())
+    @StateObject private var routesVM = RoutesViewModel(service: RouteService())
+    @State private var selectedTab = 0
+    
     var body: some View {
-        Group {
-            if vm.items.isEmpty && !vm.isLoading {
-                ContentUnavailableView(
-                    "Hiç vardiya yok",
-                    systemImage: "clock",
-                    description: Text("Aşağı çekerek yenileyebilir veya veri ekledikten sonra tekrar deneyebilirsin.")
-                )
-            } else {
-                List(vm.items) { shift in
-                    ShiftRow(shift: shift)
-                }
-                .listStyle(.plain)
-                .refreshable { vm.load() }
+        VStack(spacing: 0) {
+            Picker("Tab", selection: $selectedTab) {
+                Text("Shifts").tag(0)
+                Text("Routes").tag(1)
             }
+            .pickerStyle(.segmented)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 8)
+            
+            TabView(selection: $selectedTab) {
+                // SHIFTS TAB
+                Group {
+                    if shiftsVM.items.isEmpty && !shiftsVM.isLoading {
+                        ContentUnavailableView(
+                            "Hiç vardiya yok",
+                            systemImage: "clock",
+                            description: Text("Aşağı çekerek yenileyebilir veya veri ekledikten sonra tekrar deneyebilirsin.")
+                        )
+                    } else {
+                        List(shiftsVM.items) { shift in
+                            ShiftRow(shift: shift)
+                        }
+                        .listStyle(.plain)
+                        .refreshable { shiftsVM.load() }
+                    }
+                }
+                .overlay {
+                    if shiftsVM.isLoading { ProgressView().scaleEffect(1.2) }
+                }
+                .tag(0)
+                
+                // ROUTES TAB
+                Group {
+                    if routesVM.items.isEmpty && !routesVM.isLoading {
+                        ContentUnavailableView(
+                            "Hiç güzergah yok",
+                            systemImage: "map",
+                            description: Text("Aşağı çekerek yenileyebilir veya veri ekledikten sonra tekrar deneyebilirsin.")
+                        )
+                    } else {
+                        List(routesVM.items) { route in
+                            RouteRow(route: route)
+                        }
+                        .listStyle(.plain)
+                        .refreshable { routesVM.load() }
+                    }
+                }
+                .overlay {
+                    if routesVM.isLoading { ProgressView().scaleEffect(1.2) }
+                }
+                .tag(1)
+            }
+            .tabViewStyle(.page(indexDisplayMode: .never))
         }
-        .overlay {
-            if vm.isLoading { ProgressView().scaleEffect(1.2) }
+        .navigationTitle(selectedTab == 0 ? "Shifts" : "Routes")
+        .task {
+            if shiftsVM.items.isEmpty { shiftsVM.load() }
+            if routesVM.items.isEmpty { routesVM.load() }
         }
-        .navigationTitle("Shifts")
-        .task { if vm.items.isEmpty { vm.load() } }
         .alert("Error",
                isPresented: Binding(
-                get: { vm.error != nil },
-                set: { _ in vm.error = nil })
+                get: { shiftsVM.error != nil || routesVM.error != nil },
+                set: { _ in shiftsVM.error = nil; routesVM.error = nil })
         ) {
             Button("OK", role: .cancel) { }
         } message: {
-            Text(vm.error ?? "")
+            Text(shiftsVM.error ?? routesVM.error ?? "")
         }
+    }
+}
+
+struct RouteRow: View {
+    let route: RouteModel
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Text(route.routeName)
+                    .font(.custom("Poppins-Medium", size: 16))
+                    .foregroundColor(.primary)
+                
+                Spacer()
+                
+                if let status = route.status {
+                    Text(status)
+                        .font(.custom("Poppins-Regular", size: 12))
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(status == "Active" ? Color.green.opacity(0.2) : Color.red.opacity(0.2))
+                        .foregroundColor(status == "Active" ? .green : .red)
+                        .cornerRadius(8)
+                }
+            }
+            
+            if let description = route.description {
+                Text(description)
+                    .font(.custom("Poppins-Regular", size: 14))
+                    .foregroundColor(.secondary)
+                    .lineLimit(2)
+            }
+            
+            HStack {
+                if let distance = route.distance {
+                    Label("\(String(format: "%.1f", distance)) km", systemImage: "road.lanes")
+                        .font(.custom("Poppins-Regular", size: 12))
+                        .foregroundColor(.secondary)
+                }
+                
+                if let duration = route.estimatedDuration {
+                    Label("\(duration) dk", systemImage: "clock")
+                        .font(.custom("Poppins-Regular", size: 12))
+                        .foregroundColor(.secondary)
+                }
+            }
+        }
+        .padding(.vertical, 4)
+    }
+}
+
+#Preview {
+    NavigationStack {
+        ShiftsListView()
     }
 }
 

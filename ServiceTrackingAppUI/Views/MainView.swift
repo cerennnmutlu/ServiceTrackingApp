@@ -75,21 +75,28 @@ struct MainView: View {
             .tag(3)
 
             // PROFILE
-            ProfileView()
-                .tabItem { Label("Profile", systemImage: "person.circle") }
-                .tag(4)
+            NavigationStack {
+                ProfileView()
+                    .navigationTitle("Profile")
+                    .toolbar {
+                        ToolbarItem(placement: .topBarTrailing) {
+                            Button(role: .destructive) {
+                                appState.logout()
+                            } label: {
+                                Image(systemName: "rectangle.portrait.and.arrow.right")
+                            }
+                            .accessibilityLabel("Logout")
+                        }
+                    }
+            }
+            .tabItem { Label("Profile", systemImage: "person.circle") }
+            .tag(4)
         }
         .tint(.red) // Tema: seçili tab ve kontroller kırmızı
     }
 }
 
 // Placeholder görünümleri (iOS 17+)
-private struct RoutesPlaceholder: View {
-    var body: some View {
-        ContentUnavailableView("Routes henüz hazır değil", systemImage: "hammer")
-            .navigationTitle("Routes")
-    }
-}
 private struct TrackingsPlaceholder: View {
     var body: some View {
         ContentUnavailableView("Trackings henüz hazır değil", systemImage: "hammer")
