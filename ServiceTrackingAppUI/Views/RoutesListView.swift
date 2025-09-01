@@ -18,9 +18,9 @@ struct RoutesListView: View {
         Group {
             if vm.items.isEmpty && !vm.isLoading {
                 ContentUnavailableView(
-                    "Hiç güzergah yok",
+                    "No Routes",
                     systemImage: "map",
-                    description: Text("Aşağı çekerek yenileyebilir veya veri ekledikten sonra tekrar deneyebilirsin.")
+                    description: Text("Pull to refresh or add data and try again.")
                 )
             } else {
                 List(vm.items) { route in
@@ -34,27 +34,27 @@ struct RoutesListView: View {
                             showingDeleteAlert = true
                         },
                         onShow: {
-                            // Göster işlevi - detay sayfasına yönlendirme eklenebilir
-                            print("Route detayı göster: \(route.routeName)")
+                            // Show function - can redirect to detail page
+                            print("Show route details: \(route.routeName)")
                         }
                     )
                     .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-                        Button("Sil", role: .destructive) {
+                        Button("Delete", role: .destructive) {
                             routeToDelete = route
                             showingDeleteAlert = true
                         }
                         
-                        Button("Düzenle") {
+                        Button("Edit") {
                             editingRoute = route
                         }
                         .tint(.blue)
                     }
                     .contextMenu {
-                        Button("Düzenle", systemImage: "pencil") {
+                        Button("Edit", systemImage: "pencil") {
                             editingRoute = route
                         }
                         
-                        Button("Sil", systemImage: "trash", role: .destructive) {
+                        Button("Delete", systemImage: "trash", role: .destructive) {
                             routeToDelete = route
                             showingDeleteAlert = true
                         }
@@ -70,7 +70,7 @@ struct RoutesListView: View {
         .navigationTitle("Routes")
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
-                Button("Ekle", systemImage: "plus") {
+                Button("Add", systemImage: "plus") {
                     showingAddSheet = true
                 }
                 .font(.custom("Poppins-Medium", size: 16))
@@ -83,9 +83,9 @@ struct RoutesListView: View {
         .sheet(item: $editingRoute) { route in
             RouteFormView(viewModel: vm, editingRoute: route)
         }
-        .alert("Güzergahı Sil", isPresented: $showingDeleteAlert) {
-            Button("İptal", role: .cancel) { }
-            Button("Sil", role: .destructive) {
+        .alert("Delete Route", isPresented: $showingDeleteAlert) {
+            Button("Cancel", role: .cancel) { }
+            Button("Delete", role: .destructive) {
                 if let route = routeToDelete {
                     Task {
                         await vm.delete(id: route.id)
@@ -95,7 +95,7 @@ struct RoutesListView: View {
             }
         } message: {
             if let route = routeToDelete {
-                Text("'\(route.routeName)' güzergahını silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.")
+                Text("Are you sure you want to delete '\(route.routeName)'? This action cannot be undone.")
             }
         }
         .alert("Error",

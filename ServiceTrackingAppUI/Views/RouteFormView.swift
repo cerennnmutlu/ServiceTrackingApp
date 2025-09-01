@@ -113,7 +113,7 @@ struct RouteFormView: View {
         let durationValue = Int(estimatedDuration.isEmpty ? "0" : estimatedDuration)
         
         if let editingRoute = editingRoute {
-            // Güncelleme
+            // Update
             let request = UpdateRouteRequest(
                 routeName: routeName,
                 description: description.isEmpty ? nil : description,
@@ -124,11 +124,11 @@ struct RouteFormView: View {
             
             let success = await viewModel.update(id: editingRoute.id, request)
             if success {
-                await viewModel.load() // Liste yenile
+                await viewModel.load() // Refresh list
                 dismiss()
             }
         } else {
-            // Yeni ekleme
+            // Create new
             let request = CreateRouteRequest(
                 routeName: routeName,
                 description: description.isEmpty ? nil : description,

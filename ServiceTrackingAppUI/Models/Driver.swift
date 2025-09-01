@@ -19,6 +19,16 @@ struct Driver: Decodable, Identifiable {
 
     // Opsiyonel: API include ile gönderirse dolabilir
     let vehicleDriverAssignments: [VehicleDriverAssignment]?
+    
+    init(id: Int, fullName: String, phone: String?, status: String?, createdAt: Date?, updatedAt: Date?, vehicleDriverAssignments: [VehicleDriverAssignment]?) {
+        self.id = id
+        self.fullName = fullName
+        self.phone = phone
+        self.status = status
+        self.createdAt = createdAt
+        self.updatedAt = updatedAt
+        self.vehicleDriverAssignments = vehicleDriverAssignments
+    }
 
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: AnyCodingKey.self)

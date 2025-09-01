@@ -14,9 +14,9 @@ struct VehiclesListView: View {
         Group {
             if vm.items.isEmpty && !vm.isLoading {
                 ContentUnavailableView(
-                    "Hiç araç yok",
-                    systemImage: "bus",
-                    description: Text("Aşağı çekerek yenileyebilir veya veri ekledikten sonra tekrar deneyebilirsin.")
+                    "No Vehicles",
+                    systemImage: "car",
+                    description: Text("Pull to refresh or add data and try again.")
                 )
             } else {
                 List(vm.items) { vehicle in

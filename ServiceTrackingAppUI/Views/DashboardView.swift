@@ -24,16 +24,6 @@ struct DashboardView: View {
             }
             .background(Color.white)
             .navigationTitle("Dashboard")
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button(role: .destructive) {
-                        appState.logout()
-                    } label: {
-                        Image(systemName: "rectangle.portrait.and.arrow.right")
-                    }
-                    .accessibilityLabel("Logout")
-                }
-            }
         }
     }
 

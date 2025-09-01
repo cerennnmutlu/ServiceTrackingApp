@@ -55,8 +55,8 @@ struct ShiftsListView: View {
                                     showingDeleteShiftAlert = true
                                 },
                                 onShow: {
-                                    // Göster işlevi - detay sayfasına yönlendirme eklenebilir
-                                    print("Shift detayı göster: \(shift.shiftName)")
+                                    // Show function - can redirect to detail page
+                                    print("Show shift details: \(shift.shiftName)")
                                 }
                             )
                             .swipeActions(edge: .trailing, allowsFullSwipe: false) {
@@ -108,8 +108,8 @@ struct ShiftsListView: View {
                                     showingDeleteRouteAlert = true
                                 },
                                 onShow: {
-                                    // Göster işlevi - detay sayfasına yönlendirme eklenebilir
-                                    print("Route detayı göster: \(route.routeName)")
+                                    // Show function - can redirect to detail page
+                                    print("Show route details: \(route.routeName)")
                                 }
                             )
                             .swipeActions(edge: .trailing, allowsFullSwipe: false) {

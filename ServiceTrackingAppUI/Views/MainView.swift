@@ -24,16 +24,6 @@ struct MainView: View {
             NavigationStack {
                 VehiclesListView()
                     .navigationTitle("Vehicles")
-                    .toolbar {
-                        ToolbarItem(placement: .topBarTrailing) {
-                            Button(role: .destructive) {
-                                appState.logout()
-                            } label: {
-                                Image(systemName: "rectangle.portrait.and.arrow.right")
-                            }
-                            .accessibilityLabel("Logout")
-                        }
-                    }
             }
             .tabItem { Label("Vehicles", systemImage: "bus") }
             .tag(1)
@@ -42,16 +32,6 @@ struct MainView: View {
             NavigationStack {
                 DriversListView()
                     .navigationTitle("Drivers")
-                    .toolbar {
-                        ToolbarItem(placement: .topBarTrailing) {
-                            Button(role: .destructive) {
-                                appState.logout()
-                            } label: {
-                                Image(systemName: "rectangle.portrait.and.arrow.right")
-                            }
-                            .accessibilityLabel("Logout")
-                        }
-                    }
             }
             .tabItem { Label("Drivers", systemImage: "steeringwheel") }
             .tag(2)

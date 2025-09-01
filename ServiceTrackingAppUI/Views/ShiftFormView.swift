@@ -147,7 +147,7 @@ struct ShiftFormView: View {
         let endTimeString = timeStringForAPI(from: endTime)
         
         if let editingShift = editingShift {
-            // Güncelleme
+            // Update
             let request = UpdateShiftRequest(
                 shiftName: shiftName,
                 startTime: startTimeString,
@@ -157,11 +157,11 @@ struct ShiftFormView: View {
             
             let success = await viewModel.update(id: editingShift.id, request)
             if success {
-                await viewModel.load() // Liste yenile
+                await viewModel.load() // Refresh list
                 dismiss()
             }
         } else {
-            // Yeni ekleme
+            // Create new
             let request = CreateShiftRequest(
                 shiftName: shiftName,
                 startTime: startTimeString,

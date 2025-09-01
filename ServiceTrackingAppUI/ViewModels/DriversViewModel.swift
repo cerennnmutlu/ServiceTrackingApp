@@ -31,4 +31,54 @@ final class DriversViewModel: ObservableObject {
             await load()
         }
     }
+    
+    func create(_ request: CreateDriverRequest) async -> Bool {
+        isLoading = true
+        
+        do {
+            let newDriver = try await service.create(request)
+            items.append(newDriver)
+            isLoading = false
+            return true
+        } catch {
+            self.error = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+            isLoading = false
+            return false
+        }
+    }
+    
+    func update(id: Int, _ request: UpdateDriverRequest) async -> Bool {
+        isLoading = true
+        
+        do {
+            _ = try await service.update(id: id, request)
+            if let index = items.firstIndex(where: { $0.id == id }) {
+                // Update local model with new data
+                items[index] = Driver(
+                    id: id,
+                    fullName: request.fullName,
+                    phone: request.phone,
+                    status: request.status,
+                    createdAt: items[index].createdAt,
+                    updatedAt: Date(),
+                    vehicleDriverAssignments: items[index].vehicleDriverAssignments
+                )
+            }
+            isLoading = false
+            return true
+        } catch {
+            self.error = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+            isLoading = false
+            return false
+        }
+    }
+    
+    func delete(id: Int) async {
+        do {
+            try await service.delete(id: id)
+            items.removeAll { $0.id == id }
+        } catch {
+            self.error = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+        }
+    }
 }
