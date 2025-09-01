@@ -71,7 +71,7 @@ struct MainView: View {
                         }
                     }
             }
-            .tabItem { Label("Shifts", systemImage: "clock") }
+            .tabItem { Label("Shifts & Routes", systemImage: "clock") }
             .tag(3)
 
             // PROFILE
