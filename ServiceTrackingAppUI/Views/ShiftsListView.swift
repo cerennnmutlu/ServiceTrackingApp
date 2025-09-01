@@ -25,7 +25,7 @@ struct ShiftsListView: View {
     @State private var showingDeleteRouteAlert = false
     
     var body: some View {
-        VStack(spacing: 0) {
+        VStack(alignment: .leading, spacing: 0) {
             Picker("Tab", selection: $selectedTab) {
                 Text("Shifts").tag(0)
                 Text("Routes").tag(1)
@@ -39,9 +39,9 @@ struct ShiftsListView: View {
                 Group {
                     if shiftsVM.items.isEmpty && !shiftsVM.isLoading {
                         ContentUnavailableView(
-                            "Hiç vardiya yok",
+                            "No Shifts",
                             systemImage: "clock",
-                            description: Text("Aşağı çekerek yenileyebilir veya veri ekledikten sonra tekrar deneyebilirsin.")
+                            description: Text("Pull down to refresh or try again after adding data.")
                         )
                     } else {
                         List(shiftsVM.items) { shift in
@@ -60,29 +60,27 @@ struct ShiftsListView: View {
                                 }
                             )
                             .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-                                Button("Sil", role: .destructive) {
+                                Button("Delete", role: .destructive) {
                                     shiftToDelete = shift
                                     showingDeleteShiftAlert = true
                                 }
-                                
-                                Button("Düzenle") {
-                                    editingShift = shift
-                                }
-                                .tint(.blue)
                             }
                             .contextMenu {
-                                Button("Düzenle", systemImage: "pencil") {
+                                Button("Edit", systemImage: "pencil") {
                                     editingShift = shift
                                 }
                                 
-                                Button("Sil", systemImage: "trash", role: .destructive) {
+                                Button("Delete", systemImage: "trash", role: .destructive) {
                                     shiftToDelete = shift
                                     showingDeleteShiftAlert = true
                                 }
                             }
                         }
                         .listStyle(.plain)
-                        .refreshable { shiftsVM.load() }
+                        .listRowSeparator(.visible, edges: .all)
+                        .listRowInsets(EdgeInsets())
+                        .listRowSeparatorTint(.gray.opacity(0.3))
+                        .refreshable { shiftsVM.loadSync() }
                     }
                 }
                 .overlay {
@@ -94,9 +92,9 @@ struct ShiftsListView: View {
                 Group {
                     if routesVM.items.isEmpty && !routesVM.isLoading {
                         ContentUnavailableView(
-                            "Hiç güzergah yok",
+                            "No Routes",
                             systemImage: "map",
-                            description: Text("Aşağı çekerek yenileyebilir veya veri ekledikten sonra tekrar deneyebilirsin.")
+                            description: Text("Pull down to refresh or try again after adding data.")
                         )
                     } else {
                         List(routesVM.items) { route in
@@ -115,29 +113,26 @@ struct ShiftsListView: View {
                                 }
                             )
                             .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-                                Button("Sil", role: .destructive) {
+                                Button("Delete", role: .destructive) {
                                     routeToDelete = route
                                     showingDeleteRouteAlert = true
                                 }
-                                
-                                Button("Düzenle") {
-                                    editingRoute = route
-                                }
-                                .tint(.blue)
                             }
                             .contextMenu {
-                                Button("Düzenle", systemImage: "pencil") {
+                                Button("Edit", systemImage: "pencil") {
                                     editingRoute = route
                                 }
                                 
-                                Button("Sil", systemImage: "trash", role: .destructive) {
+                                Button("Delete", systemImage: "trash", role: .destructive) {
                                     routeToDelete = route
                                     showingDeleteRouteAlert = true
                                 }
                             }
                         }
                         .listStyle(.plain)
-                        .refreshable { routesVM.load() }
+                        .listRowSeparator(.visible, edges: .all)
+                        .listRowInsets(EdgeInsets())
+                        .refreshable { routesVM.loadSync() }
                     }
                 }
                 .overlay {
@@ -146,11 +141,12 @@ struct ShiftsListView: View {
                 .tag(1)
             }
             .tabViewStyle(.page(indexDisplayMode: .never))
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
         .navigationTitle(selectedTab == 0 ? "Shifts" : "Routes")
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
-                Button("Ekle", systemImage: "plus") {
+                Button("Add", systemImage: "plus") {
                     if selectedTab == 0 {
                         showingAddShiftSheet = true
                     } else {
@@ -161,8 +157,8 @@ struct ShiftsListView: View {
             }
         }
         .task {
-            if shiftsVM.items.isEmpty { shiftsVM.load() }
-            if routesVM.items.isEmpty { routesVM.load() }
+            if shiftsVM.items.isEmpty { shiftsVM.loadSync() }
+            if routesVM.items.isEmpty { routesVM.loadSync() }
         }
         // Shift sheets and alerts
         .sheet(isPresented: $showingAddShiftSheet) {
@@ -171,9 +167,9 @@ struct ShiftsListView: View {
         .sheet(item: $editingShift) { shift in
             ShiftFormView(viewModel: shiftsVM, editingShift: shift)
         }
-        .alert("Vardiyayı Sil", isPresented: $showingDeleteShiftAlert) {
-            Button("İptal", role: .cancel) { }
-            Button("Sil", role: .destructive) {
+        .alert("Delete Shift", isPresented: $showingDeleteShiftAlert) {
+            Button("Cancel", role: .cancel) { }
+            Button("Delete", role: .destructive) {
                 if let shift = shiftToDelete {
                     Task {
                         await shiftsVM.delete(id: shift.id)
@@ -183,7 +179,7 @@ struct ShiftsListView: View {
             }
         } message: {
             if let shift = shiftToDelete {
-                Text("'\(shift.shiftName)' vardiyasını silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.")
+                Text("Are you sure you want to delete '\(shift.shiftName)' shift? This action cannot be undone.")
             }
         }
         // Route sheets and alerts
@@ -193,9 +189,9 @@ struct ShiftsListView: View {
         .sheet(item: $editingRoute) { route in
             RouteFormView(viewModel: routesVM, editingRoute: route)
         }
-        .alert("Güzergahı Sil", isPresented: $showingDeleteRouteAlert) {
-            Button("İptal", role: .cancel) { }
-            Button("Sil", role: .destructive) {
+        .alert("Delete Route", isPresented: $showingDeleteRouteAlert) {
+            Button("Cancel", role: .cancel) { }
+            Button("Delete", role: .destructive) {
                 if let route = routeToDelete {
                     Task {
                         await routesVM.delete(id: route.id)
@@ -205,7 +201,7 @@ struct ShiftsListView: View {
             }
         } message: {
             if let route = routeToDelete {
-                Text("'\(route.routeName)' güzergahını silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.")
+                Text("Are you sure you want to delete '\(route.routeName)' route? This action cannot be undone.")
             }
         }
         .alert("Error",
@@ -235,26 +231,6 @@ struct RouteRow: View {
                 
                 Spacer()
                 
-                HStack(spacing: 12) {
-                    Button(action: onShow) {
-                        Image(systemName: "eye")
-                            .foregroundColor(.blue)
-                            .font(.system(size: 16))
-                    }
-                    
-                    Button(action: onEdit) {
-                        Image(systemName: "pencil")
-                            .foregroundColor(.orange)
-                            .font(.system(size: 16))
-                    }
-                    
-                    Button(action: onDelete) {
-                        Image(systemName: "trash")
-                            .foregroundColor(.red)
-                            .font(.system(size: 16))
-                    }
-                }
-                
                 if let status = route.status {
                     Text(status)
                         .font(.custom("Poppins-Regular", size: 12))
@@ -266,28 +242,40 @@ struct RouteRow: View {
                 }
             }
             
-            if let description = route.description {
+            if let description = route.description, !description.isEmpty {
                 Text(description)
                     .font(.custom("Poppins-Regular", size: 14))
                     .foregroundColor(.secondary)
                     .lineLimit(2)
             }
             
-            HStack {
+            
+            HStack(spacing: 12) { // mesafe ve süre blokları arasındaki boşluk
                 if let distance = route.distance {
-                    Label("\(String(format: "%.1f", distance)) km", systemImage: "road.lanes")
-                        .font(.custom("Poppins-Regular", size: 12))
-                        .foregroundColor(.secondary)
+                    HStack(spacing: 6) { // ikon–metin arası boşluk
+                        Image(systemName: "road.lanes")
+                            .font(.system(size: 12))
+                            .foregroundColor(.secondary)
+                        Text("\(String(format: "%.1f", distance)) km")
+                            .font(.custom("Poppins-Regular", size: 12))
+                            .foregroundColor(.secondary)
+                    }
                 }
                 
                 if let duration = route.estimatedDuration {
-                    Label("\(duration) dk", systemImage: "clock")
-                        .font(.custom("Poppins-Regular", size: 12))
-                        .foregroundColor(.secondary)
+                    HStack(spacing: 6) { // ikon–metin arası boşluk
+                        Image(systemName: "clock")
+                            .font(.system(size: 12))
+                            .foregroundColor(.secondary)
+                        Text("\(duration) dk")
+                            .font(.custom("Poppins-Regular", size: 12))
+                            .foregroundColor(.secondary)
+                    }
                 }
             }
         }
         .padding(.vertical, 4)
+        .onTapGesture { onEdit() }
     }
 }
 
@@ -307,51 +295,34 @@ private struct ShiftRow: View {
         HStack(spacing: 12) {
             Image(systemName: "clock.fill")
                 .imageScale(.large)
-                .foregroundColor(.blue)
+                .foregroundColor(.red)
             VStack(alignment: .leading, spacing: 2) {
                 Text(shift.shiftName).font(.headline)
-                HStack(spacing: 8) {
-                    Text("#\(shift.id)").font(.caption).foregroundStyle(.secondary)
-                    if let status = shift.status, !status.isEmpty {
-                        Text(status).font(.caption2).padding(.horizontal, 6).padding(.vertical, 2)
-                            .background(status == "Active" ? .green.opacity(0.2) : .orange.opacity(0.2))
-                            .foregroundColor(status == "Active" ? .green : .orange)
-                            .cornerRadius(6)
-                    }
-                }
             }
             Spacer()
             VStack(alignment: .trailing, spacing: 2) {
+                if let status = shift.status, !status.isEmpty {
+                    Text(status)
+                        .font(.custom("Poppins-Regular", size: 12))
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(status == "Active" ? Color.green.opacity(0.2) : Color.red.opacity(0.2))
+                        .foregroundColor(status == "Active" ? .green : .red)
+                        .cornerRadius(8)
+                }
                 HStack(spacing: 4) {
                     Image(systemName: "clock")
                         .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(.gray)
                     Text("\(shift.startTime) - \(shift.endTime)")
                         .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-                
-                HStack(spacing: 12) {
-                    Button(action: onShow) {
-                        Image(systemName: "eye")
-                            .foregroundColor(.blue)
-                            .font(.system(size: 16))
-                    }
-                    
-                    Button(action: onEdit) {
-                        Image(systemName: "pencil")
-                            .foregroundColor(.orange)
-                            .font(.system(size: 16))
-                    }
-                    
-                    Button(action: onDelete) {
-                        Image(systemName: "trash")
-                            .foregroundColor(.red)
-                            .font(.system(size: 16))
-                    }
+                        .foregroundStyle(.gray)
                 }
             }
         }
         .padding(.vertical, 6)
+        .onTapGesture {
+            onEdit()
+        }
     }
 }

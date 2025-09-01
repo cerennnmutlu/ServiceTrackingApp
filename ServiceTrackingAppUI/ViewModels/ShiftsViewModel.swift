@@ -17,15 +17,19 @@ final class ShiftsViewModel: ObservableObject {
     private let service: ShiftServicing
     init(service: ShiftServicing) { self.service = service }
 
-    func load() {
+    func load() async {
         isLoading = true; error = nil
+        do {
+            items = try await service.list()
+        } catch {
+            self.error = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+        }
+        isLoading = false
+    }
+    
+    func loadSync() {
         Task {
-            do {
-                items = try await service.list()
-            } catch {
-                self.error = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
-            }
-            isLoading = false
+            await load()
         }
     }
     

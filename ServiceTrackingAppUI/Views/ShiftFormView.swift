@@ -50,21 +50,21 @@ struct ShiftFormView: View {
     var body: some View {
         NavigationView {
             Form {
-                Section("Vardiya Bilgileri") {
-                    TextField("Vardiya Adı", text: $shiftName)
+                Section("Shift Information") {
+                    TextField("Shift Name", text: $shiftName)
                         .font(.custom("Poppins-Regular", size: 16))
                 }
                 
-                Section("Zaman Aralığı") {
-                    DatePicker("Başlangıç Saati", selection: $startTime, displayedComponents: .hourAndMinute)
+                Section("Time Range") {
+                    DatePicker("Start Time", selection: $startTime, displayedComponents: .hourAndMinute)
                         .font(.custom("Poppins-Regular", size: 16))
                     
-                    DatePicker("Bitiş Saati", selection: $endTime, displayedComponents: .hourAndMinute)
+                    DatePicker("End Time", selection: $endTime, displayedComponents: .hourAndMinute)
                         .font(.custom("Poppins-Regular", size: 16))
                 }
                 
-                Section("Durum") {
-                    Picker("Durum", selection: $status) {
+                Section("Status") {
+                    Picker("Status", selection: $status) {
                         ForEach(statusOptions, id: \.self) { option in
                             Text(option)
                                 .font(.custom("Poppins-Regular", size: 16))
@@ -75,7 +75,7 @@ struct ShiftFormView: View {
                 }
                 
                 if !shiftName.isEmpty {
-                    Section("Önizleme") {
+                    Section("Preview") {
                         HStack {
                             Image(systemName: "clock.fill")
                                 .foregroundColor(.blue)
@@ -99,18 +99,18 @@ struct ShiftFormView: View {
                     }
                 }
             }
-            .navigationTitle(editingShift == nil ? "Yeni Vardiya" : "Vardiya Düzenle")
+            .navigationTitle(editingShift == nil ? "New Shift" : "Edit Shift")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
-                    Button("İptal") {
+                    Button("Cancel") {
                         dismiss()
                     }
                     .font(.custom("Poppins-Regular", size: 16))
                 }
                 
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button(editingShift == nil ? "Ekle" : "Güncelle") {
+                    Button(editingShift == nil ? "Add" : "Update") {
                         Task {
                             await saveShift()
                         }
@@ -157,6 +157,7 @@ struct ShiftFormView: View {
             
             let success = await viewModel.update(id: editingShift.id, request)
             if success {
+                await viewModel.load() // Liste yenile
                 dismiss()
             }
         } else {

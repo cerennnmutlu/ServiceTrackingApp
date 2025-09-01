@@ -10,7 +10,7 @@ import Foundation
 protocol RouteServicing {
     func list() async throws -> [RouteModel]
     func create(_ route: CreateRouteRequest) async throws -> RouteModel
-    func update(id: Int, _ route: UpdateRouteRequest) async throws -> RouteModel
+    func update(id: Int, _ route: UpdateRouteRequest) async throws -> RouteUpdateResponse
     func delete(id: Int) async throws
 }
 
@@ -33,13 +33,13 @@ final class RouteService: RouteServicing {
         return createdRoute
     }
     
-    func update(id: Int, _ route: UpdateRouteRequest) async throws -> RouteModel {
+    func update(id: Int, _ route: UpdateRouteRequest) async throws -> RouteUpdateResponse {
         let encoder = JSONEncoder()
         encoder.dateEncodingStrategy = .iso8601
         let bodyData = try encoder.encode(route)
         let ep = Endpoint(path: "/api/Route/\(id)", method: .PUT, body: bodyData)
-        let updatedRoute: RouteModel = try await client.send(ep)
-        return updatedRoute
+        let response: RouteUpdateResponse = try await client.send(ep)
+        return response
     }
     
     func delete(id: Int) async throws {
@@ -63,4 +63,9 @@ struct UpdateRouteRequest: Codable {
     let distance: Double?
     let estimatedDuration: Int?
     let status: String?
+}
+
+struct RouteUpdateResponse: Codable {
+    let message: String
+    let error: String?
 }

@@ -61,7 +61,7 @@ struct RoutesListView: View {
                     }
                 }
                 .listStyle(.plain)
-                .refreshable { vm.load() }
+                .refreshable { vm.loadSync() }
             }
         }
         .overlay {
@@ -76,7 +76,7 @@ struct RoutesListView: View {
                 .font(.custom("Poppins-Medium", size: 16))
             }
         }
-        .task { if vm.items.isEmpty { vm.load() } }
+        .task { if vm.items.isEmpty { vm.loadSync() } }
         .sheet(isPresented: $showingAddSheet) {
             RouteFormView(viewModel: vm)
         }

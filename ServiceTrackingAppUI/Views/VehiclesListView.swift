@@ -23,14 +23,14 @@ struct VehiclesListView: View {
                     VehicleRow(vehicle: vehicle)
                 }
                 .listStyle(.plain)
-                .refreshable { vm.load() }
+                .refreshable { vm.loadSync() }
             }
         }
         .overlay {
             if vm.isLoading { ProgressView().scaleEffect(1.2) }
         }
         .navigationTitle("Vehicles")
-        .task { if vm.items.isEmpty { vm.load() } }
+        .task { if vm.items.isEmpty { vm.loadSync() } }
         .alert("Error",
                isPresented: Binding(
                 get: { vm.error != nil },

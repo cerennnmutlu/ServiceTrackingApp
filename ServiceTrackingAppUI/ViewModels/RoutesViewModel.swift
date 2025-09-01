@@ -17,15 +17,19 @@ final class RoutesViewModel: ObservableObject {
     private let service: RouteServicing
     init(service: RouteServicing) { self.service = service }
 
-    func load() {
+    func load() async {
         isLoading = true; error = nil
+        do {
+            items = try await service.list()
+        } catch {
+            self.error = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+        }
+        isLoading = false
+    }
+    
+    func loadSync() {
         Task {
-            do {
-                items = try await service.list()
-            } catch {
-                self.error = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
-            }
-            isLoading = false
+            await load()
         }
     }
     
@@ -46,10 +50,9 @@ final class RoutesViewModel: ObservableObject {
     func update(id: Int, _ request: UpdateRouteRequest) async -> Bool {
         isProcessing = true; error = nil
         do {
-            let updatedRoute = try await service.update(id: id, request)
-            if let index = items.firstIndex(where: { $0.id == id }) {
-                items[index] = updatedRoute
-            }
+            let response = try await service.update(id: id, request)
+            // API'den sadece mesaj döndüğü için listeyi yeniden yükle
+            await load()
             isProcessing = false
             return true
         } catch {

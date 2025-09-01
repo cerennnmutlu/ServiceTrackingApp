@@ -24,14 +24,14 @@ struct DriversListView: View {
                     DriverRow(driver: d)
                 }
                 .listStyle(.plain)
-                .refreshable { vm.load() }
+                .refreshable { vm.loadSync() }
             }
         }
         .overlay {
             if vm.isLoading { ProgressView().scaleEffect(1.2) }
         }
         .navigationTitle("Drivers")
-        .task { if vm.items.isEmpty { vm.load() } }
+        .task { if vm.items.isEmpty { vm.loadSync() } }
         .alert("Error",
                isPresented: Binding(
                 get: { vm.error != nil },

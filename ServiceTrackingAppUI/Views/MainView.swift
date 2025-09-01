@@ -60,16 +60,6 @@ struct MainView: View {
             NavigationStack {
                 ShiftsListView()
                     .navigationTitle("Shifts")
-                    .toolbar {
-                        ToolbarItem(placement: .topBarTrailing) {
-                            Button(role: .destructive) {
-                                appState.logout()
-                            } label: {
-                                Image(systemName: "rectangle.portrait.and.arrow.right")
-                            }
-                            .accessibilityLabel("Logout")
-                        }
-                    }
             }
             .tabItem { Label("Shifts & Routes", systemImage: "clock") }
             .tag(3)

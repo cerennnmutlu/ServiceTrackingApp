@@ -37,18 +37,18 @@ struct RouteFormView: View {
     var body: some View {
         NavigationView {
             Form {
-                Section("Güzergah Bilgileri") {
-                    TextField("Güzergah Adı", text: $routeName)
+                Section("Route Information") {
+                    TextField("Route Name", text: $routeName)
                         .font(.custom("Poppins-Regular", size: 16))
                     
-                    TextField("Açıklama (Opsiyonel)", text: $description, axis: .vertical)
+                    TextField("Description (Optional)", text: $description, axis: .vertical)
                         .font(.custom("Poppins-Regular", size: 16))
                         .lineLimit(3...6)
                 }
                 
-                Section("Detaylar") {
+                Section("Details") {
                     HStack {
-                        Text("Mesafe (km)")
+                        Text("Distance (km)")
                             .font(.custom("Poppins-Regular", size: 16))
                         Spacer()
                         TextField("0.0", text: $distance)
@@ -58,7 +58,7 @@ struct RouteFormView: View {
                     }
                     
                     HStack {
-                        Text("Tahmini Süre (dk)")
+                        Text("Estimated Duration (min)")
                             .font(.custom("Poppins-Regular", size: 16))
                         Spacer()
                         TextField("0", text: $estimatedDuration)
@@ -67,7 +67,7 @@ struct RouteFormView: View {
                             .multilineTextAlignment(.trailing)
                     }
                     
-                    Picker("Durum", selection: $status) {
+                    Picker("Status", selection: $status) {
                         ForEach(statusOptions, id: \.self) { option in
                             Text(option)
                                 .font(.custom("Poppins-Regular", size: 16))
@@ -77,18 +77,18 @@ struct RouteFormView: View {
                     .font(.custom("Poppins-Regular", size: 16))
                 }
             }
-            .navigationTitle(editingRoute == nil ? "Yeni Güzergah" : "Güzergah Düzenle")
+            .navigationTitle(editingRoute == nil ? "New Route" : "Edit Route")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
-                    Button("İptal") {
+                    Button("Cancel") {
                         dismiss()
                     }
                     .font(.custom("Poppins-Regular", size: 16))
                 }
                 
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button(editingRoute == nil ? "Ekle" : "Güncelle") {
+                    Button(editingRoute == nil ? "Add" : "Update") {
                         Task {
                             await saveRoute()
                         }
@@ -124,6 +124,7 @@ struct RouteFormView: View {
             
             let success = await viewModel.update(id: editingRoute.id, request)
             if success {
+                await viewModel.load() // Liste yenile
                 dismiss()
             }
         } else {
