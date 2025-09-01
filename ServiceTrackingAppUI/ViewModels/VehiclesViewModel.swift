@@ -31,4 +31,40 @@ final class VehiclesViewModel: ObservableObject {
             await load()
         }
     }
+    
+    func create(_ request: CreateVehicleRequest) async -> Bool {
+        isLoading = true; error = nil
+        do {
+            _ = try await service.create(request)
+            return true
+        } catch {
+            self.error = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+            return false
+        }
+        isLoading = false
+    }
+    
+    func update(id: Int, _ request: UpdateVehicleRequest) async -> Bool {
+        isLoading = true; error = nil
+        do {
+            _ = try await service.update(id: id, request)
+            return true
+        } catch {
+            self.error = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+            return false
+        }
+        isLoading = false
+    }
+    
+    func delete(id: Int) async -> Bool {
+        isLoading = true; error = nil
+        do {
+            try await service.delete(id: id)
+            return true
+        } catch {
+            self.error = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+            return false
+        }
+        isLoading = false
+    }
 }

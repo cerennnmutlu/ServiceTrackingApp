@@ -25,20 +25,25 @@ struct DriversListView: View {
                 )
             } else {
                 List(vm.items) { driver in
-                    DriverRow(
-                        driver: driver,
-                        onEdit: {
-                            editingDriver = driver
-                        },
-                        onDelete: {
-                            driverToDelete = driver
-                            showingDeleteAlert = true
-                        },
-                        onShow: {
-                            // Show function - can redirect to detail page
-                            print("Show driver details: \(driver.fullName)")
-                        }
-                    )
+                    Button {
+                        editingDriver = driver
+                    } label: {
+                        DriverRow(
+                            driver: driver,
+                            onEdit: {
+                                editingDriver = driver
+                            },
+                            onDelete: {
+                                driverToDelete = driver
+                                showingDeleteAlert = true
+                            },
+                            onShow: {
+                                // Show function - can redirect to detail page
+                                print("Show driver details: \(driver.fullName)")
+                            }
+                        )
+                    }
+                    .buttonStyle(PlainButtonStyle())
                     .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                         Button("Delete", role: .destructive) {
                             driverToDelete = driver
@@ -140,8 +145,5 @@ private struct DriverRow: View {
             }
         }
         .padding(.vertical, 6)
-        .onTapGesture {
-            onShow()
-        }
     }
 }
