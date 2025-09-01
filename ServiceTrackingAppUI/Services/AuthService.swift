@@ -9,6 +9,9 @@ import Foundation
 protocol AuthServicing {
     func login(email: String, password: String) async throws
     func register(fullName: String, username: String, email: String, password: String) async throws
+    func getProfile() async throws -> User
+    func updateProfile(fullName: String, username: String, email: String) async throws -> User
+    func changePassword(currentPassword: String, newPassword: String) async throws
 }
 
 final class AuthService: AuthServicing {
@@ -69,5 +72,57 @@ final class AuthService: AuthServicing {
         let res: LoginResponse = try await client.send(ep)
         tokenStore.token = res.token
         await MainActor.run { appState.isAuthenticated = true }
+    }
+
+    // MARK: - Profile
+
+    func getProfile() async throws -> User {
+        let ep = Endpoint(path: "api/Auth/profile", method: .GET)
+        let user: User = try await client.send(ep)
+        return user
+    }
+    
+    func updateProfile(fullName: String, username: String, email: String) async throws -> User {
+        let req = UpdateProfileRequest(fullName: fullName, username: username, email: email)
+        
+        var ep = Endpoint(path: "api/Auth/profile", method: .PUT)
+        ep.body = try req.toJSONData()
+        
+        do {
+            let response: UpdateProfileResponse = try await client.send(ep)
+            print("✅ Profile update successful: \(response.message ?? "No message")")
+            
+            // Return updated user or fetch fresh profile
+            if let updatedUser = response.user {
+                return updatedUser
+            } else {
+                // If response doesn't include user, fetch fresh profile
+                return try await getProfile()
+            }
+        } catch {
+            print("❌ Profile update failed: \(error)")
+            if let apiError = error as? APIError {
+                print("❌ API Error details: \(apiError)")
+            }
+            throw error
+        }
+    }
+    
+    func changePassword(currentPassword: String, newPassword: String) async throws {
+        let req = ChangePasswordRequest(currentPassword: currentPassword, newPassword: newPassword)
+        
+        var ep = Endpoint(path: "api/Auth/change-password", method: .PUT)
+        ep.body = try req.toJSONData()
+        
+        do {
+            let response: ChangePasswordResponse = try await client.send(ep)
+            print("✅ Password change successful: \(response.message ?? "No message")")
+        } catch {
+            print("❌ Password change failed: \(error)")
+            if let apiError = error as? APIError {
+                print("❌ API Error details: \(apiError)")
+            }
+            throw error
+        }
     }
 }

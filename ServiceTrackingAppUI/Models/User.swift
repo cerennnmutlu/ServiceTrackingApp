@@ -13,6 +13,7 @@ struct User: Decodable, Identifiable {
     let username: String
     let email: String
     let roleID: Int?
+    let roleName: String?
     let createdAt: Date?
     let updatedAt: Date?
 
@@ -23,6 +24,7 @@ struct User: Decodable, Identifiable {
         username  = try c.decodeFlexible(String.self, keys: ["username","Username"])
         email     = try c.decodeFlexible(String.self, keys: ["email","Email"])
         roleID    = c.decodeFlexibleIfPresent(Int.self, keys: ["roleID","RoleID"])
+        roleName  = c.decodeFlexibleIfPresent(String.self, keys: ["roleName","RoleName"])
         createdAt = c.decodeFlexibleIfPresent(Date.self, keys: ["createdAt","CreatedAt"])
         updatedAt = c.decodeFlexibleIfPresent(Date.self, keys: ["updatedAt","UpdatedAt"])
     }

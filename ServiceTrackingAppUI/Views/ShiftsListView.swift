@@ -12,6 +12,18 @@ struct ShiftsListView: View {
     @StateObject private var routesVM = RoutesViewModel(service: RouteService())
     @State private var selectedTab = 0
     
+    // Shift CRUD states
+    @State private var showingAddShiftSheet = false
+    @State private var editingShift: Shift?
+    @State private var shiftToDelete: Shift?
+    @State private var showingDeleteShiftAlert = false
+    
+    // Route CRUD states
+    @State private var showingAddRouteSheet = false
+    @State private var editingRoute: RouteModel?
+    @State private var routeToDelete: RouteModel?
+    @State private var showingDeleteRouteAlert = false
+    
     var body: some View {
         VStack(spacing: 0) {
             Picker("Tab", selection: $selectedTab) {
@@ -33,7 +45,41 @@ struct ShiftsListView: View {
                         )
                     } else {
                         List(shiftsVM.items) { shift in
-                            ShiftRow(shift: shift)
+                            ShiftRow(
+                                shift: shift,
+                                onEdit: {
+                                    editingShift = shift
+                                },
+                                onDelete: {
+                                    shiftToDelete = shift
+                                    showingDeleteShiftAlert = true
+                                },
+                                onShow: {
+                                    // Göster işlevi - detay sayfasına yönlendirme eklenebilir
+                                    print("Shift detayı göster: \(shift.shiftName)")
+                                }
+                            )
+                            .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                                Button("Sil", role: .destructive) {
+                                    shiftToDelete = shift
+                                    showingDeleteShiftAlert = true
+                                }
+                                
+                                Button("Düzenle") {
+                                    editingShift = shift
+                                }
+                                .tint(.blue)
+                            }
+                            .contextMenu {
+                                Button("Düzenle", systemImage: "pencil") {
+                                    editingShift = shift
+                                }
+                                
+                                Button("Sil", systemImage: "trash", role: .destructive) {
+                                    shiftToDelete = shift
+                                    showingDeleteShiftAlert = true
+                                }
+                            }
                         }
                         .listStyle(.plain)
                         .refreshable { shiftsVM.load() }
@@ -54,7 +100,41 @@ struct ShiftsListView: View {
                         )
                     } else {
                         List(routesVM.items) { route in
-                            RouteRow(route: route)
+                            RouteRow(
+                                route: route,
+                                onEdit: {
+                                    editingRoute = route
+                                },
+                                onDelete: {
+                                    routeToDelete = route
+                                    showingDeleteRouteAlert = true
+                                },
+                                onShow: {
+                                    // Göster işlevi - detay sayfasına yönlendirme eklenebilir
+                                    print("Route detayı göster: \(route.routeName)")
+                                }
+                            )
+                            .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                                Button("Sil", role: .destructive) {
+                                    routeToDelete = route
+                                    showingDeleteRouteAlert = true
+                                }
+                                
+                                Button("Düzenle") {
+                                    editingRoute = route
+                                }
+                                .tint(.blue)
+                            }
+                            .contextMenu {
+                                Button("Düzenle", systemImage: "pencil") {
+                                    editingRoute = route
+                                }
+                                
+                                Button("Sil", systemImage: "trash", role: .destructive) {
+                                    routeToDelete = route
+                                    showingDeleteRouteAlert = true
+                                }
+                            }
                         }
                         .listStyle(.plain)
                         .refreshable { routesVM.load() }
@@ -68,9 +148,65 @@ struct ShiftsListView: View {
             .tabViewStyle(.page(indexDisplayMode: .never))
         }
         .navigationTitle(selectedTab == 0 ? "Shifts" : "Routes")
+        .toolbar {
+            ToolbarItem(placement: .navigationBarTrailing) {
+                Button("Ekle", systemImage: "plus") {
+                    if selectedTab == 0 {
+                        showingAddShiftSheet = true
+                    } else {
+                        showingAddRouteSheet = true
+                    }
+                }
+                .font(.custom("Poppins-Medium", size: 16))
+            }
+        }
         .task {
             if shiftsVM.items.isEmpty { shiftsVM.load() }
             if routesVM.items.isEmpty { routesVM.load() }
+        }
+        // Shift sheets and alerts
+        .sheet(isPresented: $showingAddShiftSheet) {
+            ShiftFormView(viewModel: shiftsVM)
+        }
+        .sheet(item: $editingShift) { shift in
+            ShiftFormView(viewModel: shiftsVM, editingShift: shift)
+        }
+        .alert("Vardiyayı Sil", isPresented: $showingDeleteShiftAlert) {
+            Button("İptal", role: .cancel) { }
+            Button("Sil", role: .destructive) {
+                if let shift = shiftToDelete {
+                    Task {
+                        await shiftsVM.delete(id: shift.id)
+                    }
+                }
+                shiftToDelete = nil
+            }
+        } message: {
+            if let shift = shiftToDelete {
+                Text("'\(shift.shiftName)' vardiyasını silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.")
+            }
+        }
+        // Route sheets and alerts
+        .sheet(isPresented: $showingAddRouteSheet) {
+            RouteFormView(viewModel: routesVM)
+        }
+        .sheet(item: $editingRoute) { route in
+            RouteFormView(viewModel: routesVM, editingRoute: route)
+        }
+        .alert("Güzergahı Sil", isPresented: $showingDeleteRouteAlert) {
+            Button("İptal", role: .cancel) { }
+            Button("Sil", role: .destructive) {
+                if let route = routeToDelete {
+                    Task {
+                        await routesVM.delete(id: route.id)
+                    }
+                }
+                routeToDelete = nil
+            }
+        } message: {
+            if let route = routeToDelete {
+                Text("'\(route.routeName)' güzergahını silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.")
+            }
         }
         .alert("Error",
                isPresented: Binding(
@@ -86,6 +222,9 @@ struct ShiftsListView: View {
 
 struct RouteRow: View {
     let route: RouteModel
+    let onEdit: () -> Void
+    let onDelete: () -> Void
+    let onShow: () -> Void
     
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -95,6 +234,26 @@ struct RouteRow: View {
                     .foregroundColor(.primary)
                 
                 Spacer()
+                
+                HStack(spacing: 12) {
+                    Button(action: onShow) {
+                        Image(systemName: "eye")
+                            .foregroundColor(.blue)
+                            .font(.system(size: 16))
+                    }
+                    
+                    Button(action: onEdit) {
+                        Image(systemName: "pencil")
+                            .foregroundColor(.orange)
+                            .font(.system(size: 16))
+                    }
+                    
+                    Button(action: onDelete) {
+                        Image(systemName: "trash")
+                            .foregroundColor(.red)
+                            .font(.system(size: 16))
+                    }
+                }
                 
                 if let status = route.status {
                     Text(status)
@@ -140,6 +299,9 @@ struct RouteRow: View {
 
 private struct ShiftRow: View {
     let shift: Shift
+    let onEdit: () -> Void
+    let onDelete: () -> Void
+    let onShow: () -> Void
     
     var body: some View {
         HStack(spacing: 12) {
@@ -167,6 +329,26 @@ private struct ShiftRow: View {
                     Text("\(shift.startTime) - \(shift.endTime)")
                         .font(.caption)
                         .foregroundStyle(.secondary)
+                }
+                
+                HStack(spacing: 12) {
+                    Button(action: onShow) {
+                        Image(systemName: "eye")
+                            .foregroundColor(.blue)
+                            .font(.system(size: 16))
+                    }
+                    
+                    Button(action: onEdit) {
+                        Image(systemName: "pencil")
+                            .foregroundColor(.orange)
+                            .font(.system(size: 16))
+                    }
+                    
+                    Button(action: onDelete) {
+                        Image(systemName: "trash")
+                            .foregroundColor(.red)
+                            .font(.system(size: 16))
+                    }
                 }
             }
         }

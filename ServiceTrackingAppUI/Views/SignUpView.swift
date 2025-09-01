@@ -240,7 +240,27 @@ struct SignUpView: View {
         let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmedName.isEmpty else { return finishWithError("Please enter your full name.") }
         guard email.contains("@"), email.contains(".") else { return finishWithError("Please enter a valid email address.") }
-        guard password.count >= 6 else { return finishWithError("Password must be at least 6 characters long.") }
+        
+        // Enhanced password validation
+        guard password.count >= 8 else { return finishWithError("Password must be at least 8 characters long.") }
+        
+        guard password.rangeOfCharacter(from: .uppercaseLetters) != nil else {
+            return finishWithError("Password must contain at least one uppercase letter.")
+        }
+        
+        guard password.rangeOfCharacter(from: .lowercaseLetters) != nil else {
+            return finishWithError("Password must contain at least one lowercase letter.")
+        }
+        
+        guard password.rangeOfCharacter(from: .decimalDigits) != nil else {
+            return finishWithError("Password must contain at least one number.")
+        }
+        
+        let specialCharacters = CharacterSet(charactersIn: "!@#$%^&*()_+-=[]{}|;':,.<>?")
+        guard password.rangeOfCharacter(from: specialCharacters) != nil else {
+            return finishWithError("Password must contain at least one special character (!@#$%^&*()_+-=[]{}|;':,.<>?).")
+        }
+        
         guard password == confirmPassword else { return finishWithError("Passwords do not match.") }
 
         // Basit username stratejisi: email @ öncesi yoksa ad-soyad slug

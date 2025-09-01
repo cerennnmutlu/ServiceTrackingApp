@@ -77,17 +77,6 @@ struct MainView: View {
             // PROFILE
             NavigationStack {
                 ProfileView()
-                    .navigationTitle("Profile")
-                    .toolbar {
-                        ToolbarItem(placement: .topBarTrailing) {
-                            Button(role: .destructive) {
-                                appState.logout()
-                            } label: {
-                                Image(systemName: "rectangle.portrait.and.arrow.right")
-                            }
-                            .accessibilityLabel("Logout")
-                        }
-                    }
             }
             .tabItem { Label("Profile", systemImage: "person.circle") }
             .tag(4)

@@ -63,3 +63,26 @@ struct RegisterResponse: Decodable {
     let message: String?
     let user: UserInfo?
 }
+
+// MARK: - Update Profile DTOs
+struct UpdateProfileRequest: Encodable {
+    let fullName: String
+    let username: String
+    let email: String
+}
+
+struct UpdateProfileResponse: Decodable {
+    let message: String?
+    let user: User?
+}
+
+// MARK: - Change Password DTOs
+struct ChangePasswordRequest: Encodable {
+    let currentPassword: String
+    let newPassword: String
+}
+
+struct ChangePasswordResponse: Decodable {
+    let message: String?
+    let success: Bool?
+}
