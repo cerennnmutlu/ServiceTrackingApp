@@ -2,183 +2,431 @@
 //  DashboardView.swift
 //  ServiceTrackingAppUI
 //
-//  Created by AI on 29.08.2025.
+//  Created by Ceren Mutlu on 27.08.2025.
 //
 
 import SwiftUI
+import Charts
 
 struct DashboardView: View {
-    @EnvironmentObject var appState: AppState
-
+    @StateObject private var viewModel: DashboardViewModel
+    
+    init() {
+        // AuthService'i AppState ile birlikte oluştur
+        let appState = AppState()
+        let authService = AuthService(appState: appState)
+        self._viewModel = StateObject(wrappedValue: DashboardViewModel(authService: authService))
+    }
+    
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(spacing: 16) {
-                    statsRow
+                VStack(spacing: 20) {
+                    // Welcome Header
+                    welcomeHeader
+                    
+                    // Stats Grid
+                    statsGrid
+                    
+                    // Pending Tasks
                     pendingTasksCard
-                    quickActions
-                    systemOverview
+                    
+                    // Quick Actions
+                    quickActionsSection
+                    
+                    // Weekly Chart
+                    weeklyChartSection
                 }
                 .padding(.horizontal, 16)
-                .padding(.vertical, 12)
+                .padding(.top, 10)
             }
             .background(Color.white)
             .navigationTitle("Dashboard")
+            .navigationBarTitleDisplayMode(.large)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button(action: {}) {
+                        Image(systemName: "gearshape")
+                            .foregroundColor(.primary)
+                    }
+                }
+            }
+            .task {
+                await viewModel.loadDashboardData()
+            }
+            .refreshable {
+                await viewModel.loadDashboardData()
+            }
         }
     }
 
     // MARK: - Sections
 
-    private var statsRow: some View {
-        HStack(spacing: 12) {
-            StatCard(title: "Total Vehicles", value: "25", systemImage: "bus")
-            StatCard(title: "Active Drivers", value: "18", systemImage: "steeringwheel")
-        }
-    }
-
-    private var pendingTasksCard: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("Pending Tasks")
-                .font(.custom("Poppins-Medium", size: 14))
-                .foregroundColor(.secondary)
-            Text("7")
-                .font(.custom("Poppins-Bold", size: 28))
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(16)
-        .background(Color(red: 0.98, green: 0.98, blue: 0.98))
-        .clipShape(RoundedRectangle(cornerRadius: 14))
-        .shadow(color: Color.black.opacity(0.05), radius: 6, x: 0, y: 3)
-    }
-
-    private var quickActions: some View {
+    // MARK: - Welcome Header
+    private var welcomeHeader: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Quick Actions")
-                .font(.custom("Poppins-SemiBold", size: 16))
+            HStack {
+                Text("👋 Hoşgeldin, \(viewModel.userName)")
+                    .font(.title2)
+                    .fontWeight(.semibold)
+                    .foregroundColor(.primary)
+                Spacer()
+            }
+            
+            Text("Bugün \(viewModel.stats.activeVehicles) araç aktif")
+                .font(.subheadline)
+                .foregroundColor(.secondary)
+            
+            // Araç durumu kartları - eşit boyutlarda
             HStack(spacing: 12) {
-                PrimaryActionButton(title: "Add Vehicle", icon: "plus.circle") {}
-                SecondaryActionButton(title: "Assign Task", icon: "checkmark.circle") {}
+                VehicleStatusCard(title: "Aktif", count: 6, color: .green)
+                VehicleStatusCard(title: "Vardiyada", count: 3, color: .blue)
+                VehicleStatusCard(title: "Beklemede", count: 3, color: .orange)
             }
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
         .padding(16)
-        .background(Color.white)
-        .clipShape(RoundedRectangle(cornerRadius: 14))
-        .shadow(color: Color.black.opacity(0.05), radius: 6, x: 0, y: 3)
+        .background(Color(.systemBackground))
+        .cornerRadius(12)
+        .shadow(color: .black.opacity(0.05), radius: 2, x: 0, y: 1)
     }
 
-    private var systemOverview: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("System Overview")
-                .font(.custom("Poppins-SemiBold", size: 16))
-
-            OverviewRow(icon: "person.2", title: "User Management", subtitle: "Manage user roles and permissions")
-            OverviewRow(icon: "doc.text", title: "Reports", subtitle: "Generate usage and completion reports")
-            OverviewRow(icon: "gearshape", title: "Settings", subtitle: "Configure system preferences")
+    // MARK: - Stats Grid
+    private var statsGrid: some View {
+        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 12), count: 2), spacing: 12) {
+            // Total Vehicles Card
+            SimpleStatCard(
+                title: "Total Vehicles",
+                value: "25",
+                backgroundColor: Color(.systemBackground)
+            )
+            
+            // Active Drivers Card
+            SimpleStatCard(
+                title: "Active Drivers",
+                value: "18",
+                backgroundColor: Color(.systemBackground)
+            )
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    // MARK: - Pending Tasks Card
+    private var pendingTasksCard: some View {
+        SimpleStatCard(
+            title: "Pending Tasks",
+            value: "7",
+            backgroundColor: Color(.systemBackground)
+        )
+    }
+    
+    // MARK: - Quick Actions Section
+    private var quickActionsSection: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            HStack {
+                Text("⚡ Quick Actions")
+                    .font(.title3)
+                    .fontWeight(.semibold)
+                    .foregroundColor(.primary)
+                Spacer()
+            }
+            
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 12), count: 2), spacing: 12) {
+                QuickActionButton(
+                    icon: "+",
+                    title: "Entry Record",
+                    color: .blue
+                ) {
+                    // Handle entry record
+                }
+                
+                QuickActionButton(
+                    icon: "+",
+                    title: "Exit Record",
+                    color: .blue
+                ) {
+                    // Handle exit record
+                }
+                
+                QuickActionButton(
+                    icon: "🚌",
+                    title: "New Vehicle",
+                    color: .blue
+                ) {
+                    // Handle new vehicle
+                }
+                
+                QuickActionButton(
+                    icon: "👥",
+                    title: "New Driver",
+                    color: .blue
+                ) {
+                    // Handle new driver
+                }
+            }
+        }
         .padding(16)
         .background(Color.white)
-        .clipShape(RoundedRectangle(cornerRadius: 14))
-        .shadow(color: Color.black.opacity(0.05), radius: 6, x: 0, y: 3)
+        .cornerRadius(12)
+        .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
+    }
+    
+    // MARK: - Weekly Chart
+    private var weeklyChartSection: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            HStack {
+                Text("📊 This Week's Vehicle Movements")
+                    .font(.title3)
+                    .fontWeight(.semibold)
+                    .foregroundColor(.primary)
+                Spacer()
+            }
+            
+            Chart {
+                ForEach(Array(zip(viewModel.weeklyData.indices, viewModel.weeklyData)), id: \.0) { index, value in
+                    BarMark(
+                        x: .value("Day", dayLabels[index]),
+                        y: .value("Movements", value)
+                    )
+                    .foregroundStyle(Color.blue)
+                    .cornerRadius(4)
+                }
+            }
+            .frame(height: 200)
+            .chartYScale(domain: 0...30)
+            .chartXAxis {
+                AxisMarks(values: .automatic) { _ in
+                    AxisGridLine()
+                    AxisTick()
+                    AxisValueLabel()
+                        .font(.system(size: 12))
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .chartYAxis {
+                AxisMarks(values: .automatic) { _ in
+                    AxisGridLine()
+                    AxisTick()
+                    AxisValueLabel()
+                        .font(.system(size: 12))
+                        .foregroundStyle(.secondary)
+                }
+            }
+        }
+        .padding(16)
+        .background(Color.white)
+        .cornerRadius(12)
+        .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
+    }
+    
+    private let dayLabels = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+
+}
+
+// MARK: - Supporting Views
+
+struct DetailedStatCard: View {
+    let icon: String
+    let title: String
+    let totalCount: Int
+    let activeCount: Int
+    let inactiveCount: Int
+    let activeLabel: String
+    let inactiveLabel: String
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            // Header
+            HStack {
+                Text(icon)
+                    .font(.title2)
+                Text(title)
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundColor(.secondary)
+                Spacer()
+            }
+            
+            // Total Count
+            Text("\(totalCount)")
+                .font(.system(size: 28, weight: .bold))
+                .foregroundColor(.primary)
+            
+            // Active/Inactive Stats
+            HStack(spacing: 16) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(activeLabel + ": \(activeCount)")
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundColor(.secondary)
+                }
+                
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(inactiveLabel + ": \(inactiveCount)")
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundColor(.secondary)
+                }
+            }
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color.white)
+        .cornerRadius(12)
+        .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
     }
 }
 
-// MARK: - Components
-
-private struct StatCard: View {
+struct ShiftStatCard: View {
+    let icon: String
     let title: String
-    let value: String
-    let systemImage: String
-
+    let totalCount: Int
+    let morningCount: Int
+    let eveningCount: Int
+    let nightCount: Int
+    
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack(spacing: 8) {
-                Image(systemName: systemImage)
-                    .foregroundColor(.red)
+        VStack(alignment: .leading, spacing: 12) {
+            // Header
+            HStack {
+                Text(icon)
+                    .font(.title2)
                 Text(title)
-                    .font(.custom("Poppins-Medium", size: 13))
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundColor(.secondary)
+                Spacer()
+            }
+            
+            // Total Count
+            Text("\(totalCount)")
+                .font(.system(size: 28, weight: .bold))
+                .foregroundColor(.primary)
+            
+            // Shift Stats
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Morning: \(morningCount)")
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundColor(.secondary)
+                Text("Evening: \(eveningCount)")
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundColor(.secondary)
+                Text("Night: \(nightCount)")
+                    .font(.system(size: 12, weight: .medium))
                     .foregroundColor(.secondary)
             }
-            Text(value)
-                .font(.custom("Poppins-Bold", size: 28))
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
         .padding(16)
-        .background(.white)
-        .clipShape(RoundedRectangle(cornerRadius: 14))
-        .shadow(color: Color.black.opacity(0.05), radius: 6, x: 0, y: 3)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color.white)
+        .cornerRadius(12)
+        .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
     }
 }
 
-private struct OverviewRow: View {
+struct QuickActionButton: View {
+    let icon: String
+    let title: String
+    let color: Color
+    let action: () -> Void
+    
+    var body: some View {
+        Button(action: action) {
+            HStack {
+                Text(icon)
+                    .font(.system(size: 16, weight: .medium))
+                Text(title)
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundColor(.white)
+                Spacer()
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 12)
+            .background(color)
+            .cornerRadius(8)
+        }
+    }
+}
+
+struct SimpleStatCard: View {
+    let title: String
+    let value: String
+    let backgroundColor: Color
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(title)
+                .font(.system(size: 14, weight: .medium))
+                .foregroundColor(.secondary)
+            
+            Text(value)
+                .font(.system(size: 24, weight: .bold))
+                .foregroundColor(.primary)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(16)
+        .background(backgroundColor)
+        .cornerRadius(12)
+        .shadow(color: .black.opacity(0.05), radius: 2, x: 0, y: 1)
+    }
+}
+
+struct SystemOverviewRow: View {
     let icon: String
     let title: String
     let subtitle: String
-
+    
     var body: some View {
-        HStack(alignment: .center, spacing: 12) {
+        HStack(spacing: 12) {
             Image(systemName: icon)
-                .frame(width: 28, height: 28)
+                .font(.system(size: 20, weight: .medium))
                 .foregroundColor(.red)
-                .background(Color.red.opacity(0.08))
-                .clipShape(RoundedRectangle(cornerRadius: 8))
+                .frame(width: 32, height: 32)
+            
             VStack(alignment: .leading, spacing: 2) {
-                Text(title).font(.custom("Poppins-Medium", size: 15))
-                Text(subtitle).font(.custom("Poppins-Regular", size: 12)).foregroundColor(.secondary)
+                Text(title)
+                    .font(.system(size: 16, weight: .medium))
+                    .foregroundColor(.primary)
+                
+                Text(subtitle)
+                    .font(.system(size: 14))
+                    .foregroundColor(.secondary)
             }
+            
             Spacer()
-            Image(systemName: "chevron.right").foregroundColor(.secondary)
+            
+            Image(systemName: "chevron.right")
+                .font(.system(size: 14, weight: .medium))
+                .foregroundColor(.secondary)
         }
-        .padding(10)
-        .background(Color(.systemGroupedBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 10))
+        .padding(16)
+        .background(Color(.systemBackground))
+        .cornerRadius(12)
+        .shadow(color: .black.opacity(0.05), radius: 2, x: 0, y: 1)
     }
 }
 
-private struct PrimaryActionButton: View {
+struct VehicleStatusCard: View {
     let title: String
-    let icon: String
-    let action: () -> Void
-
+    let count: Int
+    let color: Color
+    
     var body: some View {
-        Button(action: action) {
-            HStack(spacing: 6) {
-                Image(systemName: icon)
-                Text(title)
-                    .font(.custom("Poppins-SemiBold", size: 14))
-            }
-            .foregroundColor(.white)
-            .padding(.vertical, 10)
-            .padding(.horizontal, 12)
-            .background(LinearGradient(colors: [Color.red, Color.red.opacity(0.85)], startPoint: .leading, endPoint: .trailing))
-            .clipShape(RoundedRectangle(cornerRadius: 10))
-            .shadow(color: Color.red.opacity(0.25), radius: 6, x: 0, y: 3)
+        VStack(spacing: 4) {
+            Text(title)
+                .font(.system(size: 12, weight: .medium))
+                .foregroundColor(.secondary)
+            
+            Text("\(count)")
+                .font(.system(size: 16, weight: .bold))
+                .foregroundColor(color)
         }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 8)
+        .padding(.horizontal, 12)
+        .background(color.opacity(0.1))
+        .cornerRadius(8)
     }
 }
 
-private struct SecondaryActionButton: View {
-    let title: String
-    let icon: String
-    let action: () -> Void
 
-    var body: some View {
-        Button(action: action) {
-            HStack(spacing: 6) {
-                Image(systemName: icon)
-                Text(title)
-                    .font(.custom("Poppins-SemiBold", size: 14))
-            }
-            .foregroundColor(.red)
-            .padding(.vertical, 10)
-            .padding(.horizontal, 12)
-            .background(Color.red.opacity(0.08))
-            .clipShape(RoundedRectangle(cornerRadius: 10))
-        }
-    }
+
+#Preview {
+    DashboardView()
 }
-
-#Preview { DashboardView().environmentObject(AppState()) }
 
 
