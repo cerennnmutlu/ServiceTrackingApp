@@ -20,21 +20,12 @@ struct MainView: View {
                 .tabItem { Label("Dashboard", systemImage: "house") }
                 .tag(0)
 
-            // VEHICLES
+            // VEHICLES & DRIVERS
             NavigationStack {
-                VehiclesListView()
-                    .navigationTitle("Vehicles")
+                VehiclesDriversListView()
             }
-            .tabItem { Label("Vehicles", systemImage: "bus") }
+            .tabItem { Label("Vehicles & Drivers", systemImage: "bus") }
             .tag(1)
-
-            // DRIVERS
-            NavigationStack {
-                DriversListView()
-                    .navigationTitle("Drivers")
-            }
-            .tabItem { Label("Drivers", systemImage: "steeringwheel") }
-            .tag(2)
 
             // SHIFTS
             NavigationStack {
@@ -42,14 +33,14 @@ struct MainView: View {
                     .navigationTitle("Shifts")
             }
             .tabItem { Label("Shifts & Routes", systemImage: "clock") }
-            .tag(3)
+            .tag(2)
 
             // PROFILE
             NavigationStack {
                 ProfileView()
             }
             .tabItem { Label("Profile", systemImage: "person.circle") }
-            .tag(4)
+            .tag(3)
         }
         .tint(.red) // Tema: seçili tab ve kontroller kırmızı
     }

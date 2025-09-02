@@ -28,7 +28,7 @@ struct DriversListView: View {
                     Button {
                         editingDriver = driver
                     } label: {
-                        DriverRow(
+                        OriginalDriverRow(
                             driver: driver,
                             onEdit: {
                                 editingDriver = driver
@@ -116,7 +116,7 @@ struct DriversListView: View {
     }
 }
 
-private struct DriverRow: View {
+private struct OriginalDriverRow: View {
     let driver: Driver
     let onEdit: () -> Void
     let onDelete: () -> Void

@@ -28,7 +28,7 @@ struct VehiclesListView: View {
                     Button {
                         editingVehicle = vehicle
                     } label: {
-                        VehicleRow(vehicle: vehicle, routesViewModel: routesViewModel)
+                        OriginalVehicleRow(vehicle: vehicle, routesViewModel: routesViewModel)
                     }
                     .buttonStyle(PlainButtonStyle())
                     .swipeActions(edge: .trailing, allowsFullSwipe: false) {
@@ -107,7 +107,7 @@ struct VehiclesListView: View {
     }
 }
 
-private struct VehicleRow: View {
+private struct OriginalVehicleRow: View {
     let vehicle: ServiceVehicle
     let routesViewModel: RoutesViewModel
     
