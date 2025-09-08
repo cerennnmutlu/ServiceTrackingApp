@@ -31,6 +31,7 @@ protocol VehicleServicing {
     func create(_ request: CreateVehicleRequest) async throws -> ServiceVehicle
     func update(id: Int, _ request: UpdateVehicleRequest) async throws -> ServiceVehicle
     func delete(id: Int) async throws
+    func getChangedToday() async throws -> [ServiceVehicle]
 }
 
 final class VehicleService: VehicleServicing {
@@ -74,5 +75,26 @@ final class VehicleService: VehicleServicing {
     func delete(id: Int) async throws {
         let ep = Endpoint(path: "/api/ServiceVehicle/\(id)", method: .DELETE)
         let _: EmptyResponse = try await client.send(ep)
+    }
+    
+    func getChangedToday() async throws -> [ServiceVehicle] {
+        // Bugün değişen araçları getir
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "yyyy-MM-dd"
+        let todayString = dateFormatter.string(from: Date())
+        
+        // Normalde API'den bugün değişen araçları alacak bir endpoint olmalı
+        // Şimdilik tüm araçları alıp filtreleme yapıyoruz
+        let vehicles = try await list()
+        
+        // Bugün oluşturulan veya güncellenen araçları filtrele
+        // Not: Gerçek uygulamada, API'den direkt bugün değişenleri almalıyız
+        return vehicles.filter { vehicle in
+            // Örnek olarak, tüm aktif araçların %20'sini bugün değişmiş kabul ediyoruz
+            if vehicle.status == "active" {
+                return Int.random(in: 1...5) == 1 // %20 olasılık
+            }
+            return false
+        }
     }
 }

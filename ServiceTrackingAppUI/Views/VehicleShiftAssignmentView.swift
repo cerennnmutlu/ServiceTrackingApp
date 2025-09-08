@@ -182,7 +182,7 @@ struct VehicleShiftAssignmentListView: View {
                     description: Text(viewModel.items.isEmpty ? "No shift assignments found. Add a new assignment to get started." : "No assignments match your search criteria.")
                 )
                 .symbolRenderingMode(.hierarchical)
-                .foregroundStyle(.red.opacity(0.7))
+                .foregroundStyle(.black.opacity(0.7))
             } else {
                 List {
                     ForEach(filteredItems, id: \.id) { assignment in

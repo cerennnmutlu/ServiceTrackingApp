@@ -73,6 +73,26 @@ struct TrackingListView: View {
             .padding(.vertical, 8)
             .background(Color.white)
             
+            // Bugün girilen kayıt sayısı
+            HStack {
+                Text("Bugün Girilen Kayıt Sayısı:")
+                    .font(.headline)
+                    .foregroundColor(.primary)
+                
+                Spacer()
+                
+                Text("\(viewModel.todayEntryCount)")
+                    .font(.headline)
+                    .foregroundColor(.blue)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 4)
+                    .background(Color.blue.opacity(0.1))
+                    .cornerRadius(8)
+            }
+            .padding(.horizontal)
+            .padding(.vertical, 8)
+            .background(Color.white)
+            
             if viewModel.isLoading {
                 ProgressView("Loading...")
                     .frame(maxWidth: .infinity, maxHeight: .infinity)

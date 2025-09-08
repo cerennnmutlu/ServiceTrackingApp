@@ -31,8 +31,6 @@ struct DashboardView: View {
                     // Stats Grid
                     statsGrid
                     
-                    // Pending Tasks
-                    pendingTasksCard
                     
                     // Daily Assignments Report
                     dailyAssignmentsReport
@@ -79,7 +77,7 @@ struct DashboardView: View {
                 Spacer()
             }
             
-            Text("Today \(viewModel.stats.activeVehicles) vehicles are active")
+            Text("Today \(viewModel.stats.trackingEntriesToday) entries recorded")
                 .font(.subheadline)
                 .foregroundColor(.secondary)
             
@@ -147,30 +145,35 @@ struct DashboardView: View {
     
     // MARK: - Stats Grid
     private var statsGrid: some View {
-        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 12), count: 2), spacing: 12) {
-            // Total Vehicles Card
-            SimpleStatCard(
-                title: "Total Vehicles",
-                value: "\(viewModel.stats.totalVehicles)",
-                backgroundColor: Color(.systemBackground)
-            )
+        VStack(spacing: 12) {
             
-            // Active Drivers Card
-            SimpleStatCard(
-                title: "Active Drivers",
-                value: "\(viewModel.stats.activeDrivers)",
-                backgroundColor: Color(.systemBackground)
-            )
+            // Changed vehicles, drivers and routes information
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 12), count: 3), spacing: 12) {
+                // Changed vehicles today
+                SimpleStatCard(
+                    title: "Changed Vehicles",
+                    value: "\(viewModel.stats.changedVehiclesToday)",
+                    backgroundColor: Color(.systemBackground),
+                    subtitle: "Today"
+                )
+                
+                // Changed drivers today
+                SimpleStatCard(
+                    title: "Changed Drivers",
+                    value: "\(viewModel.stats.changedDriversToday)",
+                    backgroundColor: Color(.systemBackground),
+                    subtitle: "Today"
+                )
+                
+                // Changed routes today
+                SimpleStatCard(
+                    title: "Changed Routes",
+                    value: "\(viewModel.stats.changedRoutesToday)",
+                    backgroundColor: Color(.systemBackground),
+                    subtitle: "Today"
+                )
+            }
         }
-    }
-
-    // MARK: - Pending Tasks Card
-    private var pendingTasksCard: some View {
-        SimpleStatCard(
-            title: "Pending Tasks",
-            value: "\(viewModel.stats.inactiveVehicles + viewModel.stats.inactiveDrivers)",
-            backgroundColor: Color(.systemBackground)
-        )
     }
     
     // MARK: - Quick Actions Section
@@ -381,6 +384,7 @@ struct SimpleStatCard: View {
     let title: String
     let value: String
     let backgroundColor: Color
+    var subtitle: String? = nil
     
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -391,6 +395,12 @@ struct SimpleStatCard: View {
             Text(value)
                 .font(.system(size: 24, weight: .bold))
                 .foregroundColor(.primary)
+            
+            if let subtitle = subtitle {
+                Text(subtitle)
+                    .font(.system(size: 12))
+                    .foregroundColor(.secondary)
+            }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(16)

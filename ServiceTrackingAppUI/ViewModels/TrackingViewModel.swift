@@ -15,6 +15,7 @@ final class TrackingViewModel: ObservableObject {
     @Published var selectedTracking: Tracking?
     @Published var trackingsByVehicle: [Tracking] = []
     @Published var trackingsByDate: [Tracking] = []
+    @Published var todayEntryCount: Int = 0
 
     private let service: TrackingServicing
     init(service: TrackingServicing) { self.service = service }
@@ -23,6 +24,20 @@ final class TrackingViewModel: ObservableObject {
         isLoading = true; error = nil
         do {
             items = try await service.list()
+            
+            // Bugün girilen kayıt sayısını hesapla
+            let dateFormatter = DateFormatter()
+            dateFormatter.dateFormat = "yyyy-MM-dd"
+            let todayString = dateFormatter.string(from: Date())
+            
+            // Bugünün kayıtlarını filtrele
+            let todayItems = items.filter { tracking in
+                let trackingDate = dateFormatter.string(from: tracking.trackingDateTime)
+                return trackingDate == todayString && tracking.movementType?.lowercased() == "entry"
+            }
+            
+            // Bugün girilen kayıt sayısını güncelle
+            todayEntryCount = todayItems.count
         } catch {
             self.error = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
         }

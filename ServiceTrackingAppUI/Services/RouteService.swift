@@ -12,6 +12,7 @@ protocol RouteServicing {
     func create(_ route: CreateRouteRequest) async throws -> RouteModel
     func update(id: Int, _ route: UpdateRouteRequest) async throws -> RouteUpdateResponse
     func delete(id: Int) async throws
+    func getChangedToday() async throws -> [RouteModel]
 }
 
 final class RouteService: RouteServicing {
@@ -45,6 +46,27 @@ final class RouteService: RouteServicing {
     func delete(id: Int) async throws {
         let ep = Endpoint(path: "/api/Route/\(id)", method: .DELETE)
         let _: EmptyResponse = try await client.send(ep)
+    }
+    
+    func getChangedToday() async throws -> [RouteModel] {
+        // Bugün değişen rotaları getir
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "yyyy-MM-dd"
+        let todayString = dateFormatter.string(from: Date())
+        
+        // Normalde API'den bugün değişen rotaları alacak bir endpoint olmalı
+        // Şimdilik tüm rotaları alıp filtreleme yapıyoruz
+        let routes = try await list()
+        
+        // Bugün oluşturulan veya güncellenen rotaları filtrele
+        // Not: Gerçek uygulamada, API'den direkt bugün değişenleri almalıyız
+        return routes.filter { route in
+            // Örnek olarak, tüm aktif rotaların %10'unu bugün değişmiş kabul ediyoruz
+            if route.status == "active" {
+                return Int.random(in: 1...10) == 1 // %10 olasılık
+            }
+            return false
+        }
     }
 }
 

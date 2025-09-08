@@ -21,14 +21,24 @@ struct VehicleDriverAssignmentListView: View {
     @State private var searchText = ""
     @State private var filterByActive = false
     @State private var selectedTimeFilter: TimeFilter = .lastMonth
-    
+
+    // ---- eklendi: plaka cache (serviceVehicle nil olduğunda da plaka ile arayalım)
+    @State private var vehiclePlates: [Int: String] = [:]
+
+    // ---- eklendi: normalize — boşluk/tire/diyakritik/büyük-küçük farkını kaldır
+    private func normalize(_ s: String) -> String {
+        s.folding(options: .diacriticInsensitive, locale: .current)
+         .replacingOccurrences(of: "\\W", with: "", options: .regularExpression) // harf/rakam dışını at
+         .lowercased()
+    }
+
     private var filteredItems: [VehicleDriverAssignment] {
         var filtered = viewModel.items
-        
+
         // Filter by time period
         let calendar = Calendar.current
         let now = Date()
-        
+
         switch selectedTimeFilter {
         case .today:
             filtered = filtered.filter { calendar.isDate($0.startDate, inSameDayAs: now) }
@@ -46,26 +56,34 @@ struct VehicleDriverAssignmentListView: View {
         case .all:
             break // No time filtering
         }
-        
+
         // Filter by active status if enabled
         if filterByActive {
             filtered = filtered.filter { $0.endDate == nil }
         }
-        
-        // Filter by search text
+
+        // ---- güncellendi: Search by plate OR driver (cache + normalize ile)
         if !searchText.isEmpty {
+            let q = normalize(searchText)
+
             filtered = filtered.filter { assignment in
-                let vehicleMatch = assignment.serviceVehicle?.plateNumber.localizedCaseInsensitiveContains(searchText) ?? false
-                let driverMatch = assignment.driver?.fullName.localizedCaseInsensitiveContains(searchText) ?? false
-                return vehicleMatch || driverMatch
+                // vehicle plate (önce ilişki, yoksa cache)
+                let plateRaw = assignment.serviceVehicle?.plateNumber
+                    ?? vehiclePlates[assignment.serviceVehicleID]
+                    ?? ""
+                let driverRaw = assignment.driver?.fullName ?? ""
+
+                let plate = normalize(plateRaw)   // "34 ABC-123" -> "34abc123"
+                let driver = normalize(driverRaw)
+
+                // hem contains hem de hasPrefix (34Abc -> 34ABC123)
+                return plate.contains(q) || plate.hasPrefix(q) || driver.contains(q)
             }
         }
-        
+
         return filtered.sorted { $0.startDate > $1.startDate }
     }
-    
-    
-    
+
     var body: some View {
         VStack(spacing: 0) {
             // Stats Cards
@@ -76,21 +94,21 @@ struct VehicleDriverAssignmentListView: View {
             }
             .padding(.horizontal)
             .padding(.vertical, 12)
-            .background(Color.white)
-            
+
             Divider()
-            
-            // Search Bar
+
+            // Search Bar (grilik korunuyor)
             HStack {
                 Image(systemName: "magnifyingglass")
                     .foregroundColor(.red.opacity(0.7))
                 TextField("Search by vehicle or driver...", text: $searchText)
                     .textFieldStyle(RoundedBorderTextFieldStyle())
+                    .textInputAutocapitalization(.none)
+                    .disableAutocorrection(true)
             }
             .padding(.horizontal)
             .padding(.vertical, 8)
-            .background(Color.white)
-            
+
             // Filter controls
             HStack {
                 Menu {
@@ -100,35 +118,36 @@ struct VehicleDriverAssignmentListView: View {
                         }
                     }
                 } label: {
-                    HStack {
+                    HStack(spacing: 6) {
                         Image(systemName: "calendar")
                             .foregroundColor(.gray)
+                            .font(.system(size: 14))
                         Text(selectedTimeFilter.rawValue)
                             .foregroundColor(.gray)
+                            .font(.system(size: 14))
                         Image(systemName: "chevron.down")
                             .foregroundColor(.gray)
-                            .font(.caption)
+                            .font(.system(size: 12))
                     }
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 8)
-                    .background(Color.gray.opacity(0.1))
-                    .cornerRadius(8)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 6)
+                    .cornerRadius(6)
                 }
-                
+
                 Spacer()
-                
-                Text("Active only")
-                    .foregroundColor(.gray)
-                
-                Toggle("", isOn: $filterByActive)
-                    .toggleStyle(SwitchToggleStyle(tint: .red))
+
+                HStack(spacing: 4) {
+                    //active only button
+                    Toggle("", isOn: $filterByActive)
+                        .toggleStyle(SwitchToggleStyle(tint: .red))
+                        .scaleEffect(0.8)
+                }
             }
             .padding(.horizontal)
-            .padding(.vertical, 8)
-            .background(Color.white)
-            
+            .padding(.vertical, 6)
+
             Divider()
-            
+
             if viewModel.isLoading {
                 ProgressView("Loading...")
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -139,7 +158,7 @@ struct VehicleDriverAssignmentListView: View {
                     description: Text("No driver assignments found. Add a new assignment to get started.")
                 )
                 .symbolRenderingMode(.hierarchical)
-                .foregroundStyle(.red.opacity(0.7))
+                .foregroundStyle(.black.opacity(0.7))
             } else {
                 List {
                     ForEach(filteredItems, id: \.id) { assignment in
@@ -174,9 +193,10 @@ struct VehicleDriverAssignmentListView: View {
         }
         .onAppear {
             viewModel.loadSync()
+            Task { await preloadVehiclePlates() } // ---- eklendi: plaka cache doldur
         }
     }
-    
+
     private func deleteAssignment(offsets: IndexSet) {
         for index in offsets {
             let assignment = filteredItems[index]
@@ -185,17 +205,40 @@ struct VehicleDriverAssignmentListView: View {
             }
         }
     }
-    
+
+    // ---- eklendi: listedeki tüm araçların plakasını önden çekip cache'le
+    private func preloadVehiclePlates() async {
+        let ids = Set(viewModel.items.map { $0.serviceVehicleID })
+        guard !ids.isEmpty else { return }
+
+        let service = VehicleService()
+        await withTaskGroup(of: (Int, String)?.self) { group in
+            for id in ids {
+                group.addTask {
+                    if let v = try? await service.getById(id: id) {
+                        return (id, v.plateNumber)
+                    }
+                    return nil
+                }
+            }
+            for await pair in group {
+                if let (id, plate) = pair {
+                    vehiclePlates[id] = plate
+                }
+            }
+        }
+    }
 }
+
 struct VehicleDriverAssignmentRowView: View {
     let assignment: VehicleDriverAssignment
     @State private var vehiclePlateNumber: String = ""
     @State private var isLoadingVehicle = false
-    
+
     private var assignmentDuration: String {
         let formatter = DateFormatter()
         formatter.dateStyle = .short
-        
+
         if let endDate = assignment.endDate {
             let calendar = Calendar.current
             let components = calendar.dateComponents([.day], from: assignment.startDate, to: endDate)
@@ -208,7 +251,7 @@ struct VehicleDriverAssignmentRowView: View {
             return "\(days) days (ongoing)"
         }
     }
-    
+
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             // Header with vehicle and status
@@ -217,7 +260,7 @@ struct VehicleDriverAssignmentRowView: View {
                     Image(systemName: "car.fill")
                         .foregroundColor(.red.opacity(0.7))
                         .font(.caption)
-                    
+
                     if let vehicle = assignment.serviceVehicle {
                         Text(vehicle.plateNumber)
                             .font(.headline)
@@ -236,34 +279,34 @@ struct VehicleDriverAssignmentRowView: View {
                             .foregroundColor(.red.opacity(0.8))
                     }
                 }
-                
+
                 Spacer()
-                
+
                 // Status badge
                 HStack(spacing: 4) {
                     Circle()
                         .fill(assignment.endDate == nil ? Color.red.opacity(0.8) : Color.gray)
                         .frame(width: 8, height: 8)
-                    
+
                     Text(assignment.endDate == nil ? "Active" : "Completed")
                         .font(.caption2)
                         .foregroundColor(assignment.endDate == nil ? .red.opacity(0.8) : .gray)
                 }
             }
-            
+
             // Driver information
             if let driver = assignment.driver {
                 HStack(spacing: 8) {
                     Image(systemName: "person.fill")
                         .foregroundColor(.gray)
                         .font(.caption)
-                    
+
                     Text(driver.fullName)
                         .font(.subheadline)
                         .foregroundColor(.gray)
                 }
             }
-            
+
             // Assignment details
             HStack {
                 VStack(alignment: .leading, spacing: 2) {
@@ -275,7 +318,7 @@ struct VehicleDriverAssignmentRowView: View {
                             .font(.caption2)
                             .foregroundColor(.gray)
                     }
-                    
+
                     if let endDate = assignment.endDate {
                         HStack(spacing: 4) {
                             Image(systemName: "calendar.badge.checkmark")
@@ -287,9 +330,9 @@ struct VehicleDriverAssignmentRowView: View {
                         }
                     }
                 }
-                
+
                 Spacer()
-                
+
                 // Duration
                 VStack(alignment: .trailing, spacing: 2) {
                     HStack(spacing: 4) {
@@ -311,10 +354,9 @@ struct VehicleDriverAssignmentRowView: View {
             }
         }
     }
-    
+
     private func loadVehicleInfo() {
         let vehicleID = assignment.serviceVehicleID
-        
         isLoadingVehicle = true
         Task {
             do {
@@ -325,14 +367,10 @@ struct VehicleDriverAssignmentRowView: View {
                         isLoadingVehicle = false
                     }
                 } else {
-                    await MainActor.run {
-                        isLoadingVehicle = false
-                    }
+                    await MainActor.run { isLoadingVehicle = false }
                 }
             } catch {
-                await MainActor.run {
-                    isLoadingVehicle = false
-                }
+                await MainActor.run { isLoadingVehicle = false }
             }
         }
     }
@@ -341,16 +379,16 @@ struct VehicleDriverAssignmentRowView: View {
 struct VehicleDriverAssignmentFormView: View {
     @ObservedObject var viewModel: VehicleDriverAssignmentViewModel
     @Environment(\.dismiss) private var dismiss
-    
+
     @State private var selectedVehicleID = 0
     @State private var selectedDriverID = 0
     @State private var startDate = Date()
     @State private var endDate = Date()
     @State private var hasEndDate = false
-    
+
     @StateObject private var vehiclesViewModel = VehiclesViewModel(service: VehicleService())
     @StateObject private var driversViewModel = DriversViewModel(service: DriverService())
-    
+
     var body: some View {
         NavigationView {
             Form {
@@ -361,18 +399,18 @@ struct VehicleDriverAssignmentFormView: View {
                             Text(vehicle.plateNumber).tag(vehicle.id)
                         }
                     }
-                    
+
                     Picker("Driver", selection: $selectedDriverID) {
                         Text("Select Driver").tag(0)
                         ForEach(driversViewModel.items, id: \.id) { driver in
                             Text(driver.fullName).tag(driver.id)
                         }
                     }
-                    
+
                     DatePicker("Start Date", selection: $startDate, displayedComponents: .date)
-                    
+
                     Toggle("Has End Date", isOn: $hasEndDate)
-                    
+
                     if hasEndDate {
                         DatePicker("End Date", selection: $endDate, displayedComponents: .date)
                     }
@@ -382,11 +420,9 @@ struct VehicleDriverAssignmentFormView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
-                    Button("Cancel") {
-                        dismiss()
-                    }
+                    Button("Cancel") { dismiss() }
                 }
-                
+
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Save") {
                         Task {
@@ -396,11 +432,9 @@ struct VehicleDriverAssignmentFormView: View {
                                 startDate: startDate,
                                 endDate: hasEndDate ? endDate : nil
                             )
-                            
+
                             let success = await viewModel.create(request)
-                            if success {
-                                dismiss()
-                            }
+                            if success { dismiss() }
                         }
                     }
                     .disabled(selectedVehicleID == 0 || selectedDriverID == 0)
@@ -412,8 +446,9 @@ struct VehicleDriverAssignmentFormView: View {
             driversViewModel.loadSync()
         }
     }
-    
 }
+
 #Preview {
     VehicleDriverAssignmentListView()
 }
+

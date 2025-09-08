@@ -25,6 +25,12 @@ struct DashboardStats {
     let morningShifts: Int
     let eveningShifts: Int
     let nightShifts: Int
+    
+    // Bugün değişen araç, şoför ve rota sayıları
+    var changedVehiclesToday: Int = 0
+    var changedDriversToday: Int = 0
+    var changedRoutesToday: Int = 0
+    var trackingEntriesToday: Int = 0
 }
 
 struct TodayMovement {
@@ -142,6 +148,9 @@ final class DashboardViewModel: ObservableObject {
             }.count
             let nightShifts = totalShifts - morningShifts - eveningShifts
             
+            // Bugün değişen araç, şoför ve rota sayılarını hesapla
+            let (changedVehicles, changedDrivers, changedRoutes) = await calculateTodayChanges()
+            
             self.stats = DashboardStats(
                 totalVehicles: totalVehicles,
                 activeVehicles: activeVehicles,
@@ -157,6 +166,18 @@ final class DashboardViewModel: ObservableObject {
                 eveningShifts: eveningShifts,
                 nightShifts: nightShifts
             )
+            
+            // Bugün değişen değerleri ayarla
+            stats.changedVehiclesToday = changedVehicles
+            stats.changedDriversToday = changedDrivers
+            stats.changedRoutesToday = changedRoutes
+            
+            // Bugün girilen kayıt sayısını hesapla
+            let dateFormatter = DateFormatter()
+            dateFormatter.dateFormat = "yyyy-MM-dd"
+            let todayString = dateFormatter.string(from: Date())
+            let todayTrackings = try await trackingService.getByDate(date: todayString)
+            stats.trackingEntriesToday = todayTrackings.filter { $0.movementType?.lowercased() == "entry" }.count
             
             // Calculate weekly data based on actual vehicle movements
             self.weeklyData = calculateWeeklyMovements(vehicles: vehicleList, shifts: shiftList)
@@ -175,6 +196,32 @@ final class DashboardViewModel: ObservableObject {
     
     var activeVehiclesToday: Int {
         stats.activeVehicles
+    }
+    
+    // Bugün değişen araç, şoför ve rota sayılarını hesapla
+    private func calculateTodayChanges() async -> (Int, Int, Int) {
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "yyyy-MM-dd"
+        let todayString = dateFormatter.string(from: Date())
+        
+        do {
+            // Bugün değişen araçları hesapla
+            let vehicles = try await vehicleService.getChangedToday()
+            let changedVehicles = vehicles.count
+            
+            // Bugün değişen şoförleri hesapla
+            let drivers = try await driverService.getChangedToday()
+            let changedDrivers = drivers.count
+            
+            // Bugün değişen rotaları hesapla
+            let routes = try await routeService.getChangedToday()
+            let changedRoutes = routes.count
+            
+            return (changedVehicles, changedDrivers, changedRoutes)
+        } catch {
+            print("Error calculating today's changes: \(error)")
+            return (0, 0, 0)
+        }
     }
     
     private func calculateWeeklyMovements(vehicles: [ServiceVehicle], shifts: [Shift]) -> [Int] {
@@ -237,6 +284,10 @@ final class DashboardViewModel: ObservableObject {
             let trackings = try await trackingService.getByDate(date: todayString)
             
             var movements: [TodayMovement] = []
+            
+            // Bugün girilen kayıt sayısını güncelle
+            let entryTrackings = trackings.filter { $0.movementType?.lowercased() == "entry" }
+            stats.trackingEntriesToday = entryTrackings.count
             
             for tracking in trackings {
                 // Find vehicle by ID

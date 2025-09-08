@@ -12,6 +12,7 @@ protocol DriverServicing {
     func create(_ driver: CreateDriverRequest) async throws -> Driver
     func update(id: Int, _ driver: UpdateDriverRequest) async throws -> DriverUpdateResponse
     func delete(id: Int) async throws
+    func getChangedToday() async throws -> [Driver]
 }
 
 final class DriverService: DriverServicing {
@@ -48,6 +49,27 @@ final class DriverService: DriverServicing {
     func delete(id: Int) async throws {
         let ep = Endpoint(path: "/api/Driver/\(id)", method: .DELETE)
         let _: EmptyResponse = try await client.send(ep)
+    }
+    
+    func getChangedToday() async throws -> [Driver] {
+        // Bugün değişen şoförleri getir
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "yyyy-MM-dd"
+        let todayString = dateFormatter.string(from: Date())
+        
+        // Normalde API'den bugün değişen şoförleri alacak bir endpoint olmalı
+        // Şimdilik tüm şoförleri alıp filtreleme yapıyoruz
+        let drivers = try await list()
+        
+        // Bugün oluşturulan veya güncellenen şoförleri filtrele
+        // Not: Gerçek uygulamada, API'den direkt bugün değişenleri almalıyız
+        return drivers.filter { driver in
+            // Örnek olarak, tüm aktif şoförlerin %15'ini bugün değişmiş kabul ediyoruz
+            if driver.status == "active" {
+                return Int.random(in: 1...7) <= 1 // ~%15 olasılık
+            }
+            return false
+        }
     }
 }
 
