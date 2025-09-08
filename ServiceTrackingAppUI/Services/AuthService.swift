@@ -70,7 +70,8 @@ final class AuthService: AuthServicing {
         ep.body = body
 
         let res: LoginResponse = try await client.send(ep)
-        tokenStore.token = res.token
+        tokenStore.accessToken = res.accessToken
+        tokenStore.refreshToken = res.refreshToken
         await MainActor.run { appState.isAuthenticated = true }
     }
 

@@ -33,8 +33,8 @@ final class APIClient {
         req.httpBody = ep.body
         req.setValue("application/json", forHTTPHeaderField: "Content-Type")
 
-        // JWT ekle
-        if let token = tokenStore.token {
+        // Access token ekle
+        if let token = tokenStore.accessToken {
             req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         }
         // Extra header'lar
@@ -66,7 +66,24 @@ final class APIClient {
                     print("❌ Decoding failed: \(error)")
                     throw APIError.decoding(error)
                 }
-            case 401: throw APIError.unauthorized
+            case 401:
+                // Access token geçersiz, refresh token ile yenilemeyi dene
+                if let refreshToken = tokenStore.refreshToken {
+                    do {
+                        let refreshResult = try await refreshAccessToken(refreshToken)
+                        tokenStore.accessToken = refreshResult.accessToken
+                        
+                        // Yeni token ile isteği tekrarla
+                        req.setValue("Bearer \(refreshResult.accessToken)", forHTTPHeaderField: "Authorization")
+                        return try await send(ep)
+                    } catch {
+                        // Refresh token da geçersiz, kullanıcıyı çıkış yaptır
+                        tokenStore.clear()
+                        throw APIError.unauthorized
+                    }
+                } else {
+                    throw APIError.unauthorized
+                }
             case 404: throw APIError.notFound
             default:
                 let body = String(data: data, encoding: .utf8)
@@ -80,4 +97,17 @@ final class APIClient {
 }
 
 struct EmptyResponse: Decodable {}
+
+struct RefreshTokenResponse: Decodable {
+    let accessToken: String
+}
+
+extension APIClient {
+    private func refreshAccessToken(_ refreshToken: String) async throws -> RefreshTokenResponse {
+        var ep = Endpoint(path: "api/Auth/refresh-token", method: .POST)
+        ep.body = try JSONEncoder().encode(["refreshToken": refreshToken])
+        
+        return try await send(ep)
+    }
+}
 

@@ -12,7 +12,7 @@ import Combine
 
 final class AppState: ObservableObject {
     @Published var isAuthenticated: Bool
-    init(isAuthenticated: Bool = KeychainTokenStore.shared.token != nil) {
+    init(isAuthenticated: Bool = KeychainTokenStore.shared.accessToken != nil) {
         self.isAuthenticated = isAuthenticated
     }
     func logout() {

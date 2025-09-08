@@ -32,18 +32,19 @@ struct UserInfo: Decodable {
 }
 
 struct LoginResponse: Decodable {
-    let token: String
+    let accessToken: String
+    let refreshToken: String
     let user: UserInfo
     let expiresAt: Date?
-
+    
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: AnyCodingKey.self)
-        token     = try c.decodeFlexible(String.self, keys: ["token","accessToken","jwt","jwtToken"])
-        user      = try c.decodeFlexible(UserInfo.self, keys: ["user","User"])
-        expiresAt = c.decodeFlexibleIfPresent(Date.self, keys: ["expiresAt","ExpiresAt","expiresAtUtc"])
+        accessToken  = try c.decodeFlexible(String.self, keys: ["accessToken","token","jwt","jwtToken"])
+        refreshToken = try c.decodeFlexible(String.self, keys: ["refreshToken","refresh_token"])
+        user         = try c.decodeFlexible(UserInfo.self, keys: ["user","User"])
+        expiresAt    = c.decodeFlexibleIfPresent(Date.self, keys: ["expiresAt","ExpiresAt","expiresAtUtc"])
     }
 }
-
 
 // MARK: - Register DTOs
 struct RegisterRequest: Encodable {
