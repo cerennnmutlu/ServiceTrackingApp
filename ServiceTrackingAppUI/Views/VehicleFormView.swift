@@ -37,6 +37,11 @@ struct VehicleFormView: View {
         }
     }
     
+    init() {
+        self.viewModel = VehiclesViewModel(service: VehicleService())
+        self.editingVehicle = nil
+    }
+    
     var body: some View {
         NavigationView {
             Form {

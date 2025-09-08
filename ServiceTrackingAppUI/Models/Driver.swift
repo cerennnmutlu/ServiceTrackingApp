@@ -16,6 +16,10 @@ struct Driver: Decodable, Identifiable {
     let status: String?
     let createdAt: Date?
     let updatedAt: Date?
+    
+    var isActive: Bool {
+        return status == "active"
+    }
 
     // Opsiyonel: API include ile gönderirse dolabilir
     let vehicleDriverAssignments: [VehicleDriverAssignment]?

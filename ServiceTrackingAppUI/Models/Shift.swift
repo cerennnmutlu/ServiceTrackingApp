@@ -16,6 +16,21 @@ struct Shift: Decodable, Identifiable {
     let status: String?
     let createdAt: Date?
     let updatedAt: Date?
+    
+    var isActive: Bool {
+        return status == "active"
+    }
+    
+    // Normal initializer for testing and previews
+    init(id: Int, shiftName: String, startTime: String, endTime: String, status: String? = nil, createdAt: Date? = nil, updatedAt: Date? = nil) {
+        self.id = id
+        self.shiftName = shiftName
+        self.startTime = startTime
+        self.endTime = endTime
+        self.status = status
+        self.createdAt = createdAt
+        self.updatedAt = updatedAt
+    }
 
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: AnyCodingKey.self)

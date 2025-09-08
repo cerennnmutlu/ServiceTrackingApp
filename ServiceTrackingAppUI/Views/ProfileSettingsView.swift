@@ -9,6 +9,8 @@ import SwiftUI
 
 struct ProfileSettingsView: View {
     @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject var appState: AppState
+    @State private var showingLogoutAlert = false
     
     var body: some View {
         NavigationStack {
@@ -99,6 +101,21 @@ struct ProfileSettingsView: View {
                                     subtitle: "Change app language",
                                     action: {}
                                 )
+                                
+                                Divider()
+                                    .padding(.leading, 44)
+                                
+                                Button(action: {
+                                    showingLogoutAlert = true
+                                }) {
+                                    SettingsRow(
+                                        icon: "rectangle.portrait.and.arrow.right",
+                                        title: "Logout",
+                                        subtitle: "Sign out of your account",
+                                        isDestructive: true
+                                    )
+                                }
+                                .buttonStyle(PlainButtonStyle())
                             }
                             .background(Color(.systemBackground))
                             .cornerRadius(12)
@@ -112,7 +129,14 @@ struct ProfileSettingsView: View {
                 }
             }
             .navigationBarHidden(true)
-
+            .alert("Logout", isPresented: $showingLogoutAlert) {
+                Button("Cancel", role: .cancel) { }
+                Button("Logout", role: .destructive) {
+                    appState.logout()
+                }
+            } message: {
+                Text("Are you sure you want to logout?")
+            }
             .overlay(alignment: .topTrailing) {
                 Button(action: {
                     dismiss()
@@ -235,6 +259,7 @@ struct SettingsRow: View {
     let title: String
     let subtitle: String
     var hasToggle: Bool = false
+    var isDestructive: Bool = false
     var action: (() -> Void)? = nil
     @State private var toggleValue = true
     
@@ -242,15 +267,15 @@ struct SettingsRow: View {
         HStack(spacing: 12) {
              Image(systemName: icon)
                  .font(.system(size: 20))
-                 .foregroundColor(.red)
+                 .foregroundColor(isDestructive ? .red : .red)
                  .frame(width: 24, height: 24)
              
              VStack(alignment: .leading, spacing: 2) {
                  Text(title)
                      .font(.custom("Poppins-Medium", size: 16))
-                     .foregroundColor(.black)
+                     .foregroundColor(isDestructive ? .red : .black)
                      .frame(maxWidth: .infinity, alignment: .leading)
-                 
+                
                  Text(subtitle)
                      .font(.custom("Poppins-Regular", size: 13))
                      .foregroundColor(.gray)
@@ -261,7 +286,7 @@ struct SettingsRow: View {
                  Toggle("", isOn: $toggleValue)
                      .labelsHidden()
                      .tint(.red)
-             } else {
+             } else if !isDestructive {
                  Image(systemName: "chevron.right")
                      .font(.system(size: 12))
                      .foregroundColor(.gray)

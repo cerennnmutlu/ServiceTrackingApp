@@ -30,4 +30,56 @@ extension KeyedDecodingContainer where K == AnyCodingKey {
         }
         return nil
     }
+    
+    // Date decoding with multiple strategies
+    func decodeFlexibleDate(keys: [String]) throws -> Date {
+        for k in keys {
+            if let dateString = try? decode(String.self, forKey: AnyCodingKey(k)) {
+                // Try different date formats
+                let formatters = [
+                    ISO8601DateFormatter(),
+                    {
+                        let formatter = DateFormatter()
+                        formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSSSSSS'Z'"
+                        formatter.timeZone = TimeZone(secondsFromGMT: 0)
+                        return formatter
+                    }(),
+                    {
+                        let formatter = DateFormatter()
+                        formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss'Z'"
+                        formatter.timeZone = TimeZone(secondsFromGMT: 0)
+                        return formatter
+                    }(),
+                    {
+                        let formatter = DateFormatter()
+                        formatter.dateFormat = "yyyy-MM-dd"
+                        return formatter
+                    }()
+                ]
+                
+                for formatter in formatters {
+                    if let isoFormatter = formatter as? ISO8601DateFormatter {
+                        if let date = isoFormatter.date(from: dateString) {
+                            return date
+                        }
+                    } else if let dateFormatter = formatter as? DateFormatter {
+                        if let date = dateFormatter.date(from: dateString) {
+                            return date
+                        }
+                    }
+                }
+            }
+            
+            // Try direct Date decoding as fallback
+            if let date = try? decode(Date.self, forKey: AnyCodingKey(k)) {
+                return date
+            }
+        }
+        throw DecodingError.keyNotFound(AnyCodingKey(keys.first ?? "?"),
+                                        .init(codingPath: codingPath, debugDescription: "none of keys found: \(keys)"))
+    }
+    
+    func decodeFlexibleDateIfPresent(keys: [String]) -> Date? {
+        return try? decodeFlexibleDate(keys: keys)
+    }
 }

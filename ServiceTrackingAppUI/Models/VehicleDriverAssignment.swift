@@ -23,9 +23,12 @@ struct VehicleDriverAssignment: Decodable, Identifiable {
         id               = try c.decodeFlexible(Int.self, keys: ["assignmentID","AssignmentID","id","Id"])
         serviceVehicleID = try c.decodeFlexible(Int.self, keys: ["serviceVehicleID","ServiceVehicleID"])
         driverID         = try c.decodeFlexible(Int.self, keys: ["driverID","DriverID"])
-        startDate        = try c.decodeFlexible(Date.self, keys: ["startDate","StartDate"])
-        endDate          = c.decodeFlexibleIfPresent(Date.self, keys: ["endDate","EndDate"])
-        createdAt        = c.decodeFlexibleIfPresent(Date.self, keys: ["createdAt","CreatedAt"])
+        
+        // Date decoding with multiple strategies
+        startDate = try c.decodeFlexibleDate(keys: ["startDate","StartDate"])
+        endDate = c.decodeFlexibleDateIfPresent(keys: ["endDate","EndDate"])
+        createdAt = c.decodeFlexibleDateIfPresent(keys: ["createdAt","CreatedAt"])
+        
         serviceVehicle   = c.decodeFlexibleIfPresent(ServiceVehicle.self, keys: ["serviceVehicle","ServiceVehicle"])
         driver           = c.decodeFlexibleIfPresent(Driver.self, keys: ["driver","Driver"])
     }

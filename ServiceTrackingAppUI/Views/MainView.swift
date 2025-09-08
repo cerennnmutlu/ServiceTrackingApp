@@ -34,13 +34,20 @@ struct MainView: View {
             }
             .tabItem { Label("Shifts & Routes", systemImage: "clock") }
             .tag(2)
-
-            // PROFILE
+            
+            // TRACKING
             NavigationStack {
-                ProfileView()
+                TrackingListView()
             }
-            .tabItem { Label("Profile", systemImage: "person.circle") }
+            .tabItem { Label("Tracking", systemImage: "location") }
             .tag(3)
+            
+            // ASSIGNMENTS
+            NavigationStack {
+                VehicleAssignmentView()
+            }
+            .tabItem { Label("Assignments", systemImage: "person.2.badge.gearshape") }
+            .tag(4)
         }
         .tint(.red) // Tema: seçili tab ve kontroller kırmızı
     }

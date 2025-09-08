@@ -30,6 +30,11 @@ struct DriverFormView: View {
         }
     }
     
+    init() {
+        self.viewModel = DriversViewModel(service: DriverService())
+        self.editingDriver = nil
+    }
+    
     var body: some View {
         NavigationView {
             Form {

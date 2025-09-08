@@ -17,6 +17,10 @@ struct ServiceVehicle: Decodable, Identifiable {
     let routeID: Int
     let createdAt: Date?
     let updatedAt: Date?
+    
+    var isActive: Bool {
+        return status == "active"
+    }
 
     let route: RouteModel?
     let vehicleDriverAssignments: [VehicleDriverAssignment]?

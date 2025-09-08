@@ -27,6 +27,7 @@ struct UpdateVehicleRequest: Codable {
 
 protocol VehicleServicing {
     func list() async throws -> [ServiceVehicle]
+    func getById(id: Int) async throws -> ServiceVehicle?
     func create(_ request: CreateVehicleRequest) async throws -> ServiceVehicle
     func update(id: Int, _ request: UpdateVehicleRequest) async throws -> ServiceVehicle
     func delete(id: Int) async throws
@@ -40,6 +41,16 @@ final class VehicleService: VehicleServicing {
         let ep = Endpoint(path: "/api/ServiceVehicle", method: .GET)
         let vehicles: [ServiceVehicle] = try await client.send(ep)
         return vehicles
+    }
+    
+    func getById(id: Int) async throws -> ServiceVehicle? {
+        let ep = Endpoint(path: "/api/ServiceVehicle/\(id)", method: .GET)
+        do {
+            let vehicle: ServiceVehicle = try await client.send(ep)
+            return vehicle
+        } catch {
+            return nil
+        }
     }
     
     func create(_ request: CreateVehicleRequest) async throws -> ServiceVehicle {

@@ -13,8 +13,20 @@ struct Tracking: Decodable, Identifiable {
     let shiftID: Int
     /// Backend `DateTimeOffset` → ISO-8601 gelir; `Date` olarak çözüyoruz.
     let trackingDateTime: Date
-    let movementType: String
+    let movementType: String?
     let createdAt: Date?
+    let location: String?
+    
+    var timestamp: String {
+        let formatter = ISO8601DateFormatter()
+        return formatter.string(from: trackingDateTime)
+    }
+    
+    var trackingDate: String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        return formatter.string(from: trackingDateTime)
+    }
 
     let serviceVehicle: ServiceVehicle?
     let shift: Shift?
@@ -25,8 +37,9 @@ struct Tracking: Decodable, Identifiable {
         serviceVehicleID = try c.decodeFlexible(Int.self, keys: ["serviceVehicleID","ServiceVehicleID"])
         shiftID          = try c.decodeFlexible(Int.self, keys: ["shiftID","ShiftID"])
         trackingDateTime = try c.decodeFlexible(Date.self, keys: ["trackingDateTime","TrackingDateTime"])
-        movementType     = try c.decodeFlexible(String.self, keys: ["movementType","MovementType"])
+        movementType     = c.decodeFlexibleIfPresent(String.self, keys: ["movementType","MovementType"])
         createdAt        = c.decodeFlexibleIfPresent(Date.self, keys: ["createdAt","CreatedAt"])
+        location         = c.decodeFlexibleIfPresent(String.self, keys: ["location","Location"])
         serviceVehicle   = c.decodeFlexibleIfPresent(ServiceVehicle.self, keys: ["serviceVehicle","ServiceVehicle"])
         shift            = c.decodeFlexibleIfPresent(Shift.self, keys: ["shift","Shift"])
     }
