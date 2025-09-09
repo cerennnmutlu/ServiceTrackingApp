@@ -7,7 +7,16 @@
 
 import Foundation
 
-struct Tracking: Decodable, Identifiable {
+struct Tracking: Decodable, Identifiable, Equatable {
+    static func == (lhs: Tracking, rhs: Tracking) -> Bool {
+        return lhs.id == rhs.id &&
+               lhs.serviceVehicleID == rhs.serviceVehicleID &&
+               lhs.shiftID == rhs.shiftID &&
+               lhs.trackingDateTime == rhs.trackingDateTime &&
+               lhs.movementType == rhs.movementType &&
+               lhs.createdAt == rhs.createdAt &&
+               lhs.location == rhs.location
+    }
     let id: Int
     let serviceVehicleID: Int
     let shiftID: Int

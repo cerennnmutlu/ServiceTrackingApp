@@ -14,15 +14,17 @@ struct VehicleShiftAssignmentListView: View {
     @State private var showingBulkAssignment = false
     @State private var showingDailyPlanning = false
     @State private var searchText = ""
-    @State private var selectedDate = Date()
     @State private var selectedShiftFilter: ShiftFilter = .all
     
+    // Vehicle plate cache
+    @State private var vehiclePlates: [Int: String] = [:]
+    
     enum ShiftFilter: String, CaseIterable {
-        case all = "Tüm Vardiyalar"
+        case all = "All Shifts"
         case morning = "Sabah"
         case daytime = "Gündüz"
         case evening = "Akşam"
-        case night = "Gece-1"
+        case night = "Gece"
         case weekend = "Hafta Sonu"
     }
     
@@ -55,9 +57,14 @@ struct VehicleShiftAssignmentListView: View {
         // Search by vehicle plate or shift name
         if !searchText.isEmpty {
             filtered = filtered.filter { assignment in
-                let vehicleMatch = assignment.serviceVehicle?.plateNumber.localizedCaseInsensitiveContains(searchText) ?? false
-                let shiftMatch = assignment.shift?.shiftName.localizedCaseInsensitiveContains(searchText) ?? false
-                return vehicleMatch || shiftMatch
+                // Plaka kontrolü (önce ilişki, yoksa önbellek)
+                let plateRaw = assignment.serviceVehicle?.plateNumber
+                    ?? vehiclePlates[assignment.serviceVehicleID]
+                    ?? ""
+                let shiftRaw = assignment.shift?.shiftName ?? ""
+                
+                return plateRaw.localizedCaseInsensitiveContains(searchText) || 
+                       shiftRaw.localizedCaseInsensitiveContains(searchText)
             }
         }
         
@@ -107,13 +114,13 @@ struct VehicleShiftAssignmentListView: View {
             // Statistics Section
             VStack(spacing: 8) {
                 HStack(spacing: 12) {
-                    StatCard(title: "Total", value: "\(shiftStats.total)", color: .gray)
+                    StatCard(title: "Toplam", value: "\(shiftStats.total)", color: .gray)
                     StatCard(title: "Sabah", value: "\(shiftStats.morning)", color: .orange)
                     StatCard(title: "Gündüz", value: "\(shiftStats.daytime)", color: .blue)
                 }
                 HStack(spacing: 12) {
                     StatCard(title: "Akşam", value: "\(shiftStats.evening)", color: .purple)
-                    StatCard(title: "Gece-1", value: "\(shiftStats.night)", color: .indigo)
+                    StatCard(title: "Gece", value: "\(shiftStats.night)", color: .indigo)
                     StatCard(title: "Hafta Sonu", value: "\(shiftStats.weekend)", color: .green)
                 }
             }
@@ -131,15 +138,12 @@ struct VehicleShiftAssignmentListView: View {
                         .foregroundColor(.red.opacity(0.7))
                     TextField("Search by vehicle or shift...", text: $searchText)
                         .textFieldStyle(RoundedBorderTextFieldStyle())
+                        .textInputAutocapitalization(.none)
+                        .disableAutocorrection(true)
                 }
                 
                 // Filter options
                 HStack {
-                    // Date picker
-                    DatePicker("Date", selection: $selectedDate, displayedComponents: .date)
-                        .labelsHidden()
-                        .tint(.red)
-                    
                     Spacer()
                     
                     // Shift filter
@@ -212,7 +216,7 @@ struct VehicleShiftAssignmentListView: View {
             BulkShiftAssignmentFormView(viewModel: viewModel)
         }
         .sheet(isPresented: $showingDailyPlanning) {
-            DailyShiftPlanningView(viewModel: viewModel, selectedDate: selectedDate)
+            DailyShiftPlanningView(viewModel: viewModel)
         }
         .alert("Error", isPresented: .constant(viewModel.error != nil)) {
             Button("OK") {
@@ -222,7 +226,25 @@ struct VehicleShiftAssignmentListView: View {
             Text(viewModel.error ?? "")
         }
         .onAppear {
-            viewModel.loadSync()
+                    Task {
+                        await viewModel.load()
+                        await preloadVehiclePlates()
+                    }
+                }
+    }
+    
+    private func preloadVehiclePlates() async {
+        do {
+            let service = VehicleService()
+            let vehicles = try await service.list()
+            
+            var plates: [Int: String] = [:]
+            for vehicle in vehicles {
+                plates[vehicle.id] = vehicle.plateNumber
+            }
+            vehiclePlates = plates
+        } catch {
+            print("Error loading vehicle plates: \(error)")
         }
     }
     
@@ -460,18 +482,17 @@ struct VehicleShiftAssignmentFormView: View {
 struct DailyShiftPlanningView: View {
     @ObservedObject var viewModel: VehicleShiftAssignmentViewModel
     @Environment(\.dismiss) private var dismiss
-    let selectedDate: Date
     
     private var dateString: String {
         let formatter = DateFormatter()
         formatter.dateStyle = .full
-        return formatter.string(from: selectedDate)
+        return formatter.string(from: Date())
     }
     
     private var dayAssignments: [VehicleShiftAssignment] {
         let dateFormatter = DateFormatter()
         dateFormatter.dateFormat = "yyyy-MM-dd"
-        let dateString = dateFormatter.string(from: selectedDate)
+        let dateString = dateFormatter.string(from: Date())
         
         return viewModel.items.filter { $0.assignmentDate == dateString }
     }

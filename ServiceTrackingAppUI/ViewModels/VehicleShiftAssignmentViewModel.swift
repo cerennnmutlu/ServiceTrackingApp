@@ -17,8 +17,11 @@ final class VehicleShiftAssignmentViewModel: ObservableObject {
     @Published var assignmentsByShift: [VehicleShiftAssignment] = []
     @Published var assignmentsByDate: [VehicleShiftAssignment] = []
     @Published var todayAssignments: [VehicleShiftAssignment] = []
+    @Published var vehiclePlateNumbers: [Int: String] = [:]
 
     private let service: VehicleShiftAssignmentServicing
+    private let vehicleService = VehicleService()
+    
     init(service: VehicleShiftAssignmentServicing) { self.service = service }
 
     func load() async {
@@ -34,6 +37,20 @@ final class VehicleShiftAssignmentViewModel: ObservableObject {
     func loadSync() {
         Task {
             await load()
+            await loadVehiclePlateNumbers()
+        }
+    }
+    
+    func loadVehiclePlateNumbers() async {
+        do {
+            let vehicles = try await vehicleService.list()
+            var plates: [Int: String] = [:]
+            for vehicle in vehicles {
+                plates[vehicle.id] = vehicle.plateNumber
+            }
+            vehiclePlateNumbers = plates
+        } catch {
+            print("Error loading vehicle plates: \(error)")
         }
     }
     
